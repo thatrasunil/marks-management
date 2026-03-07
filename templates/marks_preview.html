@@ -120,7 +120,8 @@
                             <th class="p-4 text-center">External (70)</th>
                             <th class="p-4 text-center">Total</th>
                             <th class="p-4 text-center">Grade</th>
-                            <th class="p-4 text-center">SGPA (All Subjects)</th>
+                            <th class="p-4 text-center">SGPA</th>
+                            <th class="p-4 text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 text-sm">
@@ -131,10 +132,11 @@
                             <td class="p-4 text-center text-gray-400">{{ loop.index }}</td>
                             <td class="p-4 font-medium text-gray-700">{{ student.roll_no }}</td>
                             <td class="p-4 text-gray-600">{{ student.name }}</td>
-                            <td class="p-4 text-center font-medium">{{ mark.internal }}</td>
-                            <td class="p-4 text-center font-medium">{{ mark.external }}</td>
-                            <td class="p-4 text-center font-bold text-gray-800">{{ mark.total }}</td>
+                            <td class="p-4 text-center font-medium">{{ mark.internal if mark else '—' }}</td>
+                            <td class="p-4 text-center font-medium">{{ mark.external if mark else '—' }}</td>
+                            <td class="p-4 text-center font-bold text-gray-800">{{ mark.total if mark else '—' }}</td>
                             <td class="p-4 text-center">
+                                {% if mark %}
                                 <span class="inline-flex items-center justify-center px-3 py-1 text-xs font-bold rounded-full 
                                     {% if mark.grade in ['O', 'A+', 'A'] %} bg-green-100 text-green-800
                                     {% elif mark.grade in ['B+', 'B'] %} bg-blue-100 text-blue-800
@@ -142,6 +144,9 @@
                                     {% else %} bg-red-100 text-red-800 {% endif %}">
                                     {{ mark.grade }}
                                 </span>
+                                {% else %}
+                                <span class="text-gray-400">—</span>
+                                {% endif %}
                             </td>
                             <td class="p-4 text-center">
                                 {% if row.sgpa is not none %}
@@ -155,11 +160,22 @@
                                 <span class="text-gray-400 text-xs">—</span>
                                 {% endif %}
                             </td>
+                            <td class="p-4 text-center">
+                                <a href="/teacher/edit_student_marks/{{ subject.id }}/{{ student.id }}"
+                                    class="inline-flex items-center gap-1 text-xs font-bold text-secondary hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
+                                    title="Edit Marks for {{ student.name }}">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.172-8.172z" />
+                                    </svg>
+                                    Edit
+                                </a>
+                            </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="8" class="p-10 text-center text-gray-400">No marks have been entered for this
-                                subject yet.</td>
+                            <td colspan="9" class="p-10 text-center text-gray-400">No students are currently enrolled in
+                                this subject.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -169,15 +185,6 @@
 
         <!-- Action Buttons -->
         <div class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a href="/teacher/enter_marks/{{ subject.id }}"
-                class="bg-secondary hover:bg-blue-800 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center space-x-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.172-8.172z">
-                    </path>
-                </svg>
-                <span>Edit Marks</span>
-            </a>
             <a href="/teacher/dashboard#subjects"
                 class="bg-gray-700 hover:bg-gray-900 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center space-x-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

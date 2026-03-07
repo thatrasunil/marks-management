@@ -1,0 +1,272 @@
+{% extends 'base.html' %}
+{% block title %}Edit Marks - {{ student.name }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 pb-12">
+
+    <!-- Header -->
+    <header class="bg-primary text-white sticky top-0 z-20 shadow-md">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-4">
+                    <a href="/teacher/marks_preview/{{ subject.id }}"
+                        class="text-blue-300 hover:text-white transition-colors" title="Back to Students">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                    </a>
+                    <div class="flex items-center space-x-3">
+                        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AITS Logo"
+                            class="h-8 w-8 rounded shadow-sm bg-white">
+                        <div>
+                            <h1 class="text-xl font-heading font-bold leading-tight">Edit Marks</h1>
+                            <p class="text-xs text-blue-300">{{ subject.name }} ({{ subject.code }})</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="hidden sm:block">
+                    <span class="text-sm font-semibold opacity-75">Faculty Portal</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for category, message in messages %}
+        <div class="mb-6 px-4 py-3 rounded-lg border text-sm font-medium
+            {% if category == 'success' %} bg-green-50 text-green-800 border-green-200
+            {% elif category == 'error' %} bg-red-50 text-red-800 border-red-200
+            {% else %} bg-blue-50 text-blue-800 border-blue-100 {% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}{% endif %}
+        {% endwith %}
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-6 sm:p-8">
+                <!-- Student Info Card -->
+                <div class="flex items-center gap-4 mb-8 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <div
+                        class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg">
+                        {{ student.name[0] }}
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800">{{ student.name }}</h2>
+                        <p class="text-sm text-gray-500">Roll Number: <span class="font-mono">{{ student.roll_no
+                                }}</span></p>
+                    </div>
+                    <div class="ml-auto text-right">
+                        <p class="text-xs text-gray-400 uppercase tracking-widest font-bold">Current Grade</p>
+                        <p class="text-2xl font-black text-primary">{{ mark.grade if mark else '—' }}</p>
+                    </div>
+                </div>
+
+                <form action="/teacher/edit_student_marks/{{ subject.id }}/{{ student.id }}" method="POST"
+                    class="space-y-8">
+                    <div class="space-y-6">
+                        <!-- Internal Marks -->
+                        <div class="p-6 bg-blue-50/50 rounded-2xl border border-blue-100">
+                            <label for="internal" class="block text-sm font-bold text-blue-900 mb-2">Internal Marks (max
+                                30)</label>
+                            <div class="relative max-w-[200px]">
+                                <input type="number" step="0.1" min="0" max="30" name="internal" id="internal"
+                                    value="{{ mark.internal if mark else '' }}" required
+                                    class="w-full px-4 py-3 bg-white border border-blue-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-xl font-bold text-blue-900"
+                                    placeholder="0.0">
+                                <div
+                                    class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-blue-400 text-sm font-mono">
+                                    / 30</div>
+                            </div>
+                        </div>
+
+                        <!-- Section A -->
+                        <div class="p-6 bg-white rounded-2xl border border-gray-200 shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-bold text-gray-800 flex items-center gap-2">
+                                    <span
+                                        class="w-8 h-8 rounded-lg bg-gray-900 text-white flex items-center justify-center text-xs">A</span>
+                                    Section A: Short Q&A (20 Marks)
+                                </h3>
+                                <span id="sec-a-total-badge"
+                                    class="bg-gray-100 text-gray-700 font-mono text-sm px-3 py-1 rounded-full border border-gray-200">0
+                                    / 20</span>
+                            </div>
+                            <p class="text-xs text-gray-400 mb-4 italic">Q.NO 1 consists of 10 questions (a to j), each
+                                for 2 marks.</p>
+                            <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                                {% for char in 'abcdefghij' %}
+                                <div class="space-y-1">
+                                    <label
+                                        class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Q1.{{
+                                        char }}</label>
+                                    <input type="number" step="0.5" min="0" max="2" name="q1{{ char }}" data-section="A"
+                                        value="{{ breakup.sec_a['q1' ~ char] if breakup and breakup.sec_a else '0' }}"
+                                        class="breakup-input w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-center font-bold text-gray-700">
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Section B -->
+                        <div class="p-6 bg-white rounded-2xl border border-gray-200 shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-bold text-gray-800 flex items-center gap-2">
+                                    <span
+                                        class="w-8 h-8 rounded-lg bg-gray-900 text-white flex items-center justify-center text-xs">B</span>
+                                    Section B: Long Q&A (50 Marks)
+                                </h3>
+                                <span id="sec-b-total-badge"
+                                    class="bg-gray-100 text-gray-700 font-mono text-sm px-3 py-1 rounded-full border border-gray-200">0
+                                    / 50</span>
+                            </div>
+                            <p class="text-xs text-gray-400 mb-6 italic">Answer one from each pair. If both are
+                                answered, the best score will be taken.</p>
+
+                            <div class="space-y-6">
+                                {% set pairs = [ (2,3), (4,5), (6,7), (8,9), (10,11) ] %}
+                                {% for p1, p2 in pairs %}
+                                <div
+                                    class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200 relative">
+                                    <div
+                                        class="absolute -top-3 left-4 bg-white px-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest border border-gray-100 rounded">
+                                        Unit {{ loop.index }}</div>
+                                    <div class="space-y-1">
+                                        <label class="block text-[10px] font-bold text-gray-500 uppercase">Question {{
+                                            p1 }}</label>
+                                        <input type="number" step="0.5" min="0" max="10" name="q{{ p1 }}"
+                                            data-section="B" data-pair="{{ loop.index }}"
+                                            value="{{ breakup.sec_b['q' ~ p1] if breakup and breakup.sec_b else '0' }}"
+                                            class="breakup-input w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-center font-bold text-gray-700 shadow-sm">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="block text-[10px] font-bold text-gray-500 uppercase">Question {{
+                                            p2 }}</label>
+                                        <input type="number" step="0.5" min="0" max="10" name="q{{ p2 }}"
+                                            data-section="B" data-pair="{{ loop.index }}"
+                                            value="{{ breakup.sec_b['q' ~ p2] if breakup and breakup.sec_b else '0' }}"
+                                            class="breakup-input w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-center font-bold text-gray-700 shadow-sm">
+                                    </div>
+                                    <div class="col-span-full flex justify-end">
+                                        <span
+                                            class="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded pair-best-hint-{{ loop.index }}">Selected:
+                                            0.0</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- External Summary -->
+                        <div class="flex items-center justify-between p-4 bg-gray-900 text-white rounded-xl">
+                            <div>
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Calculated
+                                    External</p>
+                                <p class="text-xs text-gray-500">Sec A + Sec B (Best of 2)</p>
+                            </div>
+                            <div class="text-right">
+                                <span id="external-total-display" class="text-3xl font-black">0.0</span>
+                                <span class="text-gray-500 text-sm">/ 70</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Total Live Update (Simple JS) -->
+                    <div class="pt-4 border-t border-gray-100">
+                        <div class="flex justify-between items-center text-gray-500 text-sm mb-2">
+                            <span>Computed Total:</span>
+                            <span id="total-display" class="font-bold text-gray-800 text-xl">
+                                {{ mark.total if mark else '0.0' }}
+                            </span>
+                        </div>
+                        <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                            <div id="progress-bar" class="h-full bg-blue-600 transition-all duration-300"></div>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex flex-col sm:flex-row gap-3 pt-4">
+                        <button type="submit"
+                            class="flex-1 bg-primary hover:bg-gray-800 text-white font-bold py-4 px-6 rounded-xl shadow-lg transition-all transform hover:-translate-y-0.5">
+                            Save Marks
+                        </button>
+                        <a href="/teacher/marks_preview/{{ subject.id }}"
+                            class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-4 px-6 rounded-xl text-center transition-all">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <p class="mt-6 text-center text-sm text-gray-400">
+            Internal and external marks are required. Grades and SGPA will be automatically updated upon saving.
+        </p>
+    </main>
+</div>
+
+<script>
+    const internalInput = document.getElementById('internal');
+    const totalDisplay = document.getElementById('total-display');
+    const externalTotalDisplay = document.getElementById('external-total-display');
+    const progressBar = document.getElementById('progress-bar');
+    const breakupInputs = document.querySelectorAll('.breakup-input');
+    const secATotalBadge = document.getElementById('sec-a-total-badge');
+    const secBTotalBadge = document.getElementById('sec-b-total-badge');
+
+    function updateTotal() {
+        // Section A Calculation
+        let secATotal = 0;
+        document.querySelectorAll('.breakup-input[data-section="A"]').forEach(input => {
+            secATotal += parseFloat(input.value) || 0;
+        });
+        secATotalBadge.textContent = secATotal.toFixed(1) + ' / 20';
+
+        // Section B Calculation (Best of Two)
+        let secBTotal = 0;
+        for (let i = 1; i <= 5; i++) {
+            const pairInputs = document.querySelectorAll(`.breakup-input[data-section="B"][data-pair="${i}"]`);
+            const v1 = parseFloat(pairInputs[0].value) || 0;
+            const v2 = parseFloat(pairInputs[1].value) || 0;
+            const best = Math.max(v1, v2);
+            secBTotal += best;
+
+            const hint = document.querySelector(`.pair-best-hint-${i}`);
+            if (hint) hint.textContent = 'Selected: ' + best.toFixed(1);
+        }
+        secBTotalBadge.textContent = secBTotal.toFixed(1) + ' / 50';
+
+        // Summary Totals
+        const externalTotal = secATotal + secBTotal;
+        externalTotalDisplay.textContent = externalTotal.toFixed(1);
+
+        const internalVal = parseFloat(internalInput.value) || 0;
+        const overallTotal = internalVal + externalTotal;
+
+        totalDisplay.textContent = overallTotal.toFixed(1);
+
+        // Progress Bar
+        const progressPercent = Math.min(100, overallTotal);
+        progressBar.style.width = progressPercent + '%';
+
+        if (overallTotal >= 40) {
+            progressBar.classList.remove('bg-red-500');
+            progressBar.classList.add('bg-blue-600');
+        } else {
+            progressBar.classList.remove('bg-blue-600');
+            progressBar.classList.add('bg-red-500');
+        }
+    }
+
+    internalInput.addEventListener('input', updateTotal);
+    breakupInputs.forEach(input => {
+        input.addEventListener('input', updateTotal);
+    });
+
+    // Initial update
+    window.addEventListener('load', updateTotal);
+</script>
+{% endblock %}

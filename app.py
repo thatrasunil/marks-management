@@ -588,15 +588,105 @@ def marks_preview(subject_id):
     for student in students:
         mark = Mark.query.filter_by(student_id=student.id, subject_id=subject.id).first()
         result = Result.query.filter_by(student_id=student.id).first()
-        if mark:
-            preview_data.append({
-                'student': student,
-                'mark': mark,
-                'sgpa': result.sgpa if result else None,
-            })
+        preview_data.append({
+            'student': student,
+            'mark': mark,
+            'sgpa': result.sgpa if result else None,
+        })
 
     return render_template('marks_preview.html', subject=subject, preview_data=preview_data)
     
+@app.route('/teacher/edit_student_marks/<int:subject_id>/<int:student_id>', methods=['GET', 'POST'])
+def edit_student_marks(subject_id, student_id):
+    if 'teacher_id' not in session: return redirect(url_for('teacher_login'))
+    
+    teacher_id = session['teacher_id']
+    subject = Subject.query.filter_by(id=subject_id, teacher_id=teacher_id).first_or_404()
+    student = Student.query.get_or_404(student_id)
+    
+    import json
+    
+    if request.method == 'POST':
+        internal_str = request.form.get('internal')
+        
+        # Section A: 10 Qs, max 2 each
+        sec_a_marks = {}
+        sec_a_total = 0
+        for char in 'abcdefghij':
+            val = request.form.get(f'q1{char}', '0')
+            try:
+                m = float(val)
+                sec_a_marks[f'q1{char}'] = m
+                sec_a_total += m
+            except ValueError:
+                sec_a_marks[f'q1{char}'] = 0
+        
+        # Section B: 5 pairs, Best of Two, max 10 each
+        sec_b_marks = {}
+        sec_b_total = 0
+        pairs = [(2,3), (4,5), (6,7), (8,9), (10,11)]
+        for p1, p2 in pairs:
+            v1 = float(request.form.get(f'q{p1}', '0') or 0)
+            v2 = float(request.form.get(f'q{p2}', '0') or 0)
+            sec_b_marks[f'q{p1}'] = v1
+            sec_b_marks[f'q{p2}'] = v2
+            sec_b_total += max(v1, v2)
+            
+        external = sec_a_total + sec_b_total
+        breakup_json = json.dumps({'sec_a': sec_a_marks, 'sec_b': sec_b_marks})
+        
+        if internal_str:
+            try:
+                internal = float(internal_str)
+                
+                if internal > 30.0 or external > 70.0 or internal < 0 or external < 0:
+                    flash(f'Invalid marks. Internal (max 30) and External (max 70).', 'error')
+                    return redirect(url_for('edit_student_marks', subject_id=subject_id, student_id=student_id))
+
+                total = internal + external
+                grade, gp = calculate_grade(total)
+                
+                mark = Mark.query.filter_by(student_id=student.id, subject_id=subject.id).first()
+                if not mark:
+                    mark = Mark(student_id=student.id, subject_id=subject.id)
+                    db.session.add(mark)
+                    
+                mark.internal = internal
+                mark.external = external
+                mark.total = total
+                mark.grade = grade
+                mark.grade_point = gp
+                mark.external_breakup = breakup_json
+                
+                # Re-calculate SGPA
+                existing_result = Result.query.filter_by(student_id=student.id).first()
+                if existing_result and existing_result.is_released:
+                    existing_result.is_released = False
+                
+                all_marks = Mark.query.filter_by(student_id=student.id).all()
+                total_credits = sum(m.subject.credits for m in all_marks)
+                total_grade_points = sum(m.grade_point * m.subject.credits for m in all_marks)
+                sgpa = round(total_grade_points / total_credits, 2) if total_credits > 0 else 0.0
+                
+                result = existing_result or Result.query.filter_by(student_id=student.id).first()
+                if not result:
+                    result = Result(student_id=student.id)
+                    db.session.add(result)
+                
+                result.sgpa = sgpa
+                result.cgpa = sgpa
+                result.is_released = False
+                
+                db.session.commit()
+                flash(f'Marks updated for {student.name}!', 'success')
+                return redirect(url_for('marks_preview', subject_id=subject_id))
+            except ValueError:
+                flash(f'Invalid numeric format.', 'error')
+        
+    mark = Mark.query.filter_by(student_id=student.id, subject_id=subject.id).first()
+    breakup = json.loads(mark.external_breakup) if mark and mark.external_breakup else None
+    return render_template('edit_student_marks.html', subject=subject, student=student, mark=mark, breakup=breakup)
+
 @app.route('/teacher/logout')
 def teacher_logout():
     session.pop('teacher_id', None)
