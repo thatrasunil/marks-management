@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}Result - {{ student.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-10 px-4">
+    <div class="flex justify-between items-center mb-8">
+        <div class="flex items-center space-x-3">
+            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AITS Logo" class="h-12 w-12 rounded shadow-sm">
+            <h1 class="text-2xl font-heading font-bold text-primary">AITS Results</h1>
+        </div>
+        <a href="/"
+            class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium text-sm">
+            ← Check Another
+        </a>
+    </div>
+
+    <!-- Student Detail Card -->
+    <div
+        class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8 flex flex-col md:flex-row justify-between items-center">
+        <div>
+            <h2 class="text-3xl font-bold text-gray-800">{{ student.name }}</h2>
+            <div class="flex items-center space-x-4 mt-2 text-gray-500 font-medium">
+                <span class="flex items-center"><svg class="w-4 h-4 mr-1 text-primary" fill="currentColor"
+                        viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                            clip-rule="evenodd"></path>
+                    </svg> {{ student.roll_no }}</span>
+                <span class="flex items-center bg-blue-50 text-primary px-3 py-1 rounded-full text-sm">
+                    Semester {{ result.semester }}
+                </span>
+            </div>
+        </div>
+
+        <div class="mt-4 md:mt-0 flex space-x-4">
+            <div class="bg-gray-50 border border-gray-100 px-6 py-4 rounded-xl text-center">
+                <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">SGPA</p>
+                <p
+                    class="text-4xl font-black {% if result.sgpa >= 8.0 %}text-success{% elif result.sgpa >= 6.0 %}text-secondary{% else %}text-error{% endif %}">
+                    {{ result.sgpa }}</p>
+            </div>
+
+            <div class="bg-gray-50 border border-gray-100 px-6 py-4 rounded-xl text-center">
+                <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">CGPA</p>
+                <p
+                    class="text-4xl font-black {% if result.cgpa >= 8.0 %}text-success{% elif result.cgpa >= 6.0 %}text-secondary{% else %}text-error{% endif %}">
+                    {{ result.cgpa }}</p>
+            </div>
+
+            <div class="bg-gray-50 border border-gray-100 px-6 py-4 rounded-xl text-center">
+                <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Status</p>
+                {% set ns = namespace(failed=false) %}
+                {% for mark in marks %}
+                {% if mark.grade == 'F' %}{% set ns.failed = true %}{% endif %}
+                {% endfor %}
+
+                {% if ns.failed %}
+                <p class="text-2xl font-black text-error mt-2">FAIL</p>
+                {% else %}
+                <p class="text-2xl font-black text-success mt-2">PASS</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Marks Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-primary text-white text-sm uppercase tracking-wider">
+                    <th class="p-4 font-semibold">Subject Name</th>
+                    <th class="p-4 font-semibold text-center">Internal (30)</th>
+                    <th class="p-4 font-semibold text-center">External (70)</th>
+                    <th class="p-4 font-semibold text-center">Total (100)</th>
+                    <th class="p-4 font-semibold text-center">Grade</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 text-gray-700">
+                {% for mark in marks %}
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="p-4 font-medium">{{ mark.subject.name }} <span class="text-xs text-gray-400 block">{{
+                            mark.subject.code }}</span></td>
+                    <td class="p-4 text-center">{{ mark.internal }}</td>
+                    <td class="p-4 text-center">{{ mark.external }}</td>
+                    <td class="p-4 text-center font-bold">{{ mark.total }}</td>
+                    <td class="p-4 text-center">
+                        <span class="inline-flex items-center justify-center px-3 py-1 text-sm font-bold rounded-full 
+                        {% if mark.grade in ['O', 'A+', 'A'] %} bg-green-100 text-green-800
+                        {% elif mark.grade in ['B+', 'B'] %} bg-blue-100 text-blue-800
+                        {% elif mark.grade == 'C' %} bg-orange-100 text-orange-800
+                        {% else %} bg-red-100 text-red-800 {% endif %}">
+                            {{ mark.grade }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-8 text-center text-sm text-gray-400">
+        <p>This is a computer-generated document. For official purposes, please refer to the original marks memo.</p>
+        <button onclick="window.print()"
+            class="mt-4 px-6 py-2 bg-primary text-white rounded-lg hover:bg-gray-800 transition-colors inline-flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z">
+                </path>
+            </svg>
+            Print Result
+        </button>
+    </div>
+</div>
+{% endblock %}

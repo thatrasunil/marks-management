@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AITS Results{% endblock %}</title>
+    <!-- Prevent favicon 404 -->
+    <link rel="icon" href="data:,">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600;700&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1E3A5F',     // Deep Navy
+                        secondary: '#2563EB',   // Royal Blue
+                        background: '#F8FAFC',  // Soft White
+                        success: '#10B981',     // Emerald Green
+                        warning: '#F59E0B',     // Amber Orange
+                        error: '#EF4444'        // Soft Red
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Poppins', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-background text-gray-800 font-sans min-h-screen flex flex-col">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="fixed top-4 right-4 z-50">
+        {% for category, message in messages %}
+        <div
+            class="mb-2 p-4 roundedshadow-lg {% if category == 'error' %}bg-error text-white{% elif category == 'success' %}bg-success text-white{% else %}bg-warning text-white{% endif %} transition-all duration-300">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    <script>
+        setTimeout(() => {
+            document.querySelectorAll('.fixed.top-4 > div').forEach(el => el.classList.add('hidden'));
+        }, 4000);
+    </script>
+    {% endif %}
+    {% endwith %}
+
+    <main class="flex-grow">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-primary text-white py-4 text-center text-sm font-light">
+        &copy; 2026 AITS Results. All rights reserved.
+    </footer>
+</body>
+
+</html>

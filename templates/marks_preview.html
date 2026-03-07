@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% block title %}Marks Preview - {{ subject.name }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 pb-12">
+
+    <!-- Header -->
+    <header class="bg-primary text-white sticky top-0 z-20 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-4">
+                    <a href="/teacher/enter_marks/{{ subject.id }}"
+                        class="text-blue-300 hover:text-white transition-colors" title="Back to Edit Marks">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                    </a>
+                    <div class="flex items-center space-x-3">
+                        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AITS Logo"
+                            class="h-8 w-8 rounded shadow-sm bg-white">
+                        <div>
+                            <h1 class="text-xl font-heading font-bold leading-tight">Marks Preview — {{ subject.name }}
+                            </h1>
+                            <p class="text-xs text-blue-300">{{ subject.code }} • {{ subject.credits }} Credits</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <span
+                        class="bg-yellow-500 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">Pending
+                        Admin Release</span>
+                    <a href="/teacher/dashboard#subjects"
+                        class="bg-white/10 hover:bg-white/20 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
+                        ← Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="mb-4 px-4 py-3 rounded-lg border text-sm font-medium
+            {% if category == 'success' %} bg-green-50 text-green-800 border-green-200
+            {% elif category == 'error' %} bg-red-50 text-red-800 border-red-200
+            {% else %} bg-blue-50 text-blue-800 border-blue-100 {% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- Info Banner -->
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-start space-x-3">
+            <svg class="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div>
+                <p class="font-semibold text-amber-800">Results calculated and ready for review</p>
+                <p class="text-amber-700 text-sm mt-0.5">SGPA values below are auto-calculated from all subjects entered
+                    so far. These results are <strong>hidden from students</strong> until the Admin releases them.</p>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 text-center">
+                <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Students Graded</p>
+                <p class="text-3xl font-black text-primary">{{ preview_data|length }}</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 text-center">
+                <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Passed</p>
+                <p class="text-3xl font-black text-green-600">{{ preview_data | selectattr('mark.grade', 'ne', 'F') |
+                    list | length }}</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 text-center">
+                <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Failed</p>
+                <p class="text-3xl font-black text-red-500">{{ preview_data | selectattr('mark.grade', 'eq', 'F') | list
+                    | length }}</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 text-center">
+                <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Avg SGPA</p>
+                {% set valid = preview_data | selectattr('sgpa') | list %}
+                <p class="text-3xl font-black text-secondary">
+                    {% if valid %}{{ "%.2f"|format(valid | map(attribute='sgpa') | sum / valid | length) }}{% else
+                    %}N/A{% endif %}
+                </p>
+            </div>
+        </div>
+
+        <!-- Results Table -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h2 class="font-bold text-gray-800 text-lg">Student Marks — {{ subject.name }}</h2>
+                <a href="/teacher/enter_marks/{{ subject.id }}"
+                    class="text-sm font-semibold text-secondary hover:text-blue-800 transition-colors flex items-center space-x-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.172-8.172z">
+                        </path>
+                    </svg>
+                    <span>Edit Marks</span>
+                </a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-max">
+                    <thead>
+                        <tr class="bg-white text-xs uppercase tracking-wider text-gray-500 font-semibold border-b">
+                            <th class="p-4 text-center w-12">#</th>
+                            <th class="p-4">Roll No.</th>
+                            <th class="p-4">Student Name</th>
+                            <th class="p-4 text-center">Internal (30)</th>
+                            <th class="p-4 text-center">External (70)</th>
+                            <th class="p-4 text-center">Total</th>
+                            <th class="p-4 text-center">Grade</th>
+                            <th class="p-4 text-center">SGPA (All Subjects)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 text-sm">
+                        {% for row in preview_data %}
+                        {% set mark = row.mark %}
+                        {% set student = row.student %}
+                        <tr class="hover:bg-blue-50/30 transition-colors">
+                            <td class="p-4 text-center text-gray-400">{{ loop.index }}</td>
+                            <td class="p-4 font-medium text-gray-700">{{ student.roll_no }}</td>
+                            <td class="p-4 text-gray-600">{{ student.name }}</td>
+                            <td class="p-4 text-center font-medium">{{ mark.internal }}</td>
+                            <td class="p-4 text-center font-medium">{{ mark.external }}</td>
+                            <td class="p-4 text-center font-bold text-gray-800">{{ mark.total }}</td>
+                            <td class="p-4 text-center">
+                                <span class="inline-flex items-center justify-center px-3 py-1 text-xs font-bold rounded-full 
+                                    {% if mark.grade in ['O', 'A+', 'A'] %} bg-green-100 text-green-800
+                                    {% elif mark.grade in ['B+', 'B'] %} bg-blue-100 text-blue-800
+                                    {% elif mark.grade == 'C' %} bg-orange-100 text-orange-800
+                                    {% else %} bg-red-100 text-red-800 {% endif %}">
+                                    {{ mark.grade }}
+                                </span>
+                            </td>
+                            <td class="p-4 text-center">
+                                {% if row.sgpa is not none %}
+                                <span class="font-black text-lg 
+                                    {% if row.sgpa >= 8.0 %} text-green-600
+                                    {% elif row.sgpa >= 6.0 %} text-secondary
+                                    {% else %} text-red-500 {% endif %}">
+                                    {{ "%.2f"|format(row.sgpa) }}
+                                </span>
+                                {% else %}
+                                <span class="text-gray-400 text-xs">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="p-10 text-center text-gray-400">No marks have been entered for this
+                                subject yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a href="/teacher/enter_marks/{{ subject.id }}"
+                class="bg-secondary hover:bg-blue-800 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center space-x-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.172-8.172z">
+                    </path>
+                </svg>
+                <span>Edit Marks</span>
+            </a>
+            <a href="/teacher/dashboard#subjects"
+                class="bg-gray-700 hover:bg-gray-900 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center space-x-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                </svg>
+                <span>Back to My Subjects</span>
+            </a>
+        </div>
+
+    </main>
+</div>
+{% endblock %}

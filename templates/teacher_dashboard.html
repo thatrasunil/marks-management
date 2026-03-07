@@ -1,0 +1,411 @@
+{% extends 'base.html' %}
+{% block title %}Teacher Dashboard{% endblock %}
+
+{% block content %}
+<style>
+    .subject-card {
+        transition: box-shadow .2s, transform .2s;
+    }
+
+    .subject-card:hover {
+        box-shadow: 0 8px 24px rgba(30, 64, 175, .13);
+        transform: translateY(-2px);
+    }
+
+    .progress-bar-inner {
+        transition: width .6s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    .stat-number {
+        font-variant-numeric: tabular-nums;
+    }
+
+    .nav-active {
+        background: rgba(255, 255, 255, .15) !important;
+    }
+
+    .greeting-time {
+        font-size: .7rem;
+    }
+
+    @keyframes fadeSlideUp {
+        from {
+            opacity: 0;
+            transform: translateY(14px);
+        }
+
+        to {
+            opacity: 1;
+            transform: none;
+        }
+    }
+
+    .animate-in {
+        animation: fadeSlideUp .35s ease both;
+    }
+
+    .animate-in:nth-child(2) {
+        animation-delay: .07s;
+    }
+
+    .animate-in:nth-child(3) {
+        animation-delay: .14s;
+    }
+
+    .animate-in:nth-child(4) {
+        animation-delay: .21s;
+    }
+</style>
+
+<div class="flex h-screen bg-gray-50 overflow-hidden">
+
+    <!-- ── Sidebar (desktop) ── -->
+    <aside class="w-64 bg-primary text-white hidden md:flex flex-col shadow-xl shrink-0">
+        <div class="p-6 border-b border-blue-900 flex items-center space-x-3">
+            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AITS Logo"
+                class="h-10 w-10 rounded shadow-md bg-white">
+            <div>
+                <h2 class="text-xl font-heading font-bold tracking-wide leading-tight">AITS Results</h2>
+                <p class="text-blue-300 text-xs mt-0.5 truncate max-w-[140px]">{{ teacher.name }}</p>
+            </div>
+        </div>
+
+        <nav class="flex-grow p-4 space-y-1">
+            <a href="#dashboard" id="nav-dashboard" onclick="switchTab('dashboard')"
+                class="nav-link flex items-center gap-3 py-3 px-4 rounded-lg text-white font-medium nav-active transition-colors">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6" />
+                </svg>
+                Dashboard
+            </a>
+            <a href="#subjects" id="nav-subjects" onclick="switchTab('subjects')"
+                class="nav-link flex items-center gap-3 py-3 px-4 hover:bg-blue-800 rounded-lg text-blue-200 transition-colors">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                My Subjects
+                <span class="ml-auto bg-blue-700 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                    {{ subjects|length }}
+                </span>
+            </a>
+        </nav>
+
+        <!-- Sidebar bottom: quick info -->
+        <div class="px-4 pb-2 pt-3 border-t border-blue-900 space-y-3">
+            <div class="text-xs text-blue-400 font-semibold uppercase tracking-wide px-1">Session Info</div>
+            <div class="bg-blue-900/50 rounded-lg px-3 py-2 text-xs text-blue-200 space-y-1">
+                <div class="flex justify-between">
+                    <span>Semester</span>
+                    <span class="font-bold text-white">Current</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Subjects</span>
+                    <span class="font-bold text-white">{{ subjects|length }}</span>
+                </div>
+            </div>
+            <a href="/teacher/logout"
+                class="flex items-center justify-center gap-2 py-2 px-4 border border-blue-500 hover:bg-blue-800 rounded-lg text-white transition-colors text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Logout
+            </a>
+        </div>
+    </aside>
+
+    <!-- ── Main Content ── -->
+    <main class="flex-1 overflow-y-auto">
+
+        <!-- Mobile top bar -->
+        <div
+            class="md:hidden bg-primary text-white px-4 py-3 flex justify-between items-center sticky top-0 z-10 shadow">
+            <div class="flex items-center gap-2">
+                <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo" class="h-7 w-7 rounded bg-white">
+                <span class="font-bold text-sm">AITS Results</span>
+            </div>
+            <div class="flex gap-2 text-xs">
+                <a href="#dashboard" onclick="switchTab('dashboard')"
+                    class="px-3 py-1.5 rounded-lg bg-blue-900 text-white">Dashboard</a>
+                <a href="#subjects" onclick="switchTab('subjects')"
+                    class="px-3 py-1.5 rounded-lg text-blue-200">Subjects</a>
+                <a href="/teacher/logout" class="px-3 py-1.5 rounded-lg text-blue-200">Logout</a>
+            </div>
+        </div>
+
+        <div class="p-6 lg:p-8">
+
+            <!-- ══ DASHBOARD TAB ══════════════════════════════════════════════ -->
+            <div id="tab-dashboard" class="block">
+
+                <!-- Greeting row -->
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 gap-4">
+                    <div>
+                        <p id="greeting-text" class="text-sm font-semibold text-secondary greeting-time mb-1">Good
+                            morning ☀️</p>
+                        <h1 class="text-3xl font-heading font-bold text-gray-800">
+                            Welcome, Prof. {{ teacher.name.split(' ')[-1] if ' ' in teacher.name else teacher.name }}
+                        </h1>
+                        <p class="text-gray-500 mt-1 text-sm">Here is a quick overview of your assigned classes.</p>
+                    </div>
+                    <span
+                        class="inline-flex items-center gap-2 bg-blue-50 text-secondary px-4 py-2 rounded-lg text-sm font-semibold border border-blue-100 self-start sm:self-auto">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Current Semester
+                    </span>
+                </div>
+
+                <!-- ① Stat cards row -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    <!-- Assigned Subjects -->
+                    <div
+                        class="animate-in bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                        <div class="bg-blue-100 p-3 rounded-lg shrink-0">
+                            <svg class="w-6 h-6 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">Subjects</p>
+                            <p class="stat-number text-2xl font-black text-gray-800">{{ subjects|length }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <div
+                        class="animate-in bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                        <div class="bg-green-100 p-3 rounded-lg shrink-0">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">Status</p>
+                            <p class="stat-number text-xl font-black text-green-600">Active</p>
+                        </div>
+                    </div>
+
+                    <!-- Total Students -->
+                    <div
+                        class="animate-in bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                        <div class="bg-purple-100 p-3 rounded-lg shrink-0">
+                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">Students</p>
+                            <p class="stat-number text-2xl font-black text-gray-800">—</p>
+                        </div>
+                    </div>
+
+                    <!-- Credits -->
+                    <div
+                        class="animate-in bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                        <div class="bg-amber-100 p-3 rounded-lg shrink-0">
+                            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">Total Credits</p>
+                            <p class="stat-number text-2xl font-black text-gray-800">
+                                {% set total_credits = namespace(val=0) %}
+                                {% for s in subjects %}{% set total_credits.val = total_credits.val + s.credits %}{%
+                                endfor %}
+                                {{ total_credits.val }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ② Subject quick-list with progress bars -->
+                {% if subjects %}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                        <h2 class="font-bold text-gray-700 text-sm uppercase tracking-wide">Subject Overview</h2>
+                        <button onclick="switchTab('subjects')"
+                            class="text-xs text-secondary font-semibold hover:underline">View All →</button>
+                    </div>
+                    <div class="divide-y divide-gray-50">
+                        {% for subject in subjects %}
+                        <div
+                            class="px-6 py-4 flex items-center justify-between gap-4 hover:bg-gray-50 transition-colors">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span
+                                    class="shrink-0 w-8 h-8 rounded-lg bg-blue-100 text-secondary text-xs font-bold flex items-center justify-center">
+                                    {{ loop.index }}
+                                </span>
+                                <div class="min-w-0">
+                                    <p class="font-semibold text-gray-800 text-sm truncate">{{ subject.name }}</p>
+                                    <p class="text-xs text-gray-400">{{ subject.code }} • {{ subject.credits }} cr</p>
+                                </div>
+                            </div>
+                            <a href="/teacher/enter_marks/{{ subject.id }}"
+                                class="shrink-0 inline-flex items-center gap-1 text-xs font-bold text-secondary hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
+                                Enter Marks
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                        d="M9 5l7 7-7 7" />
+                                </svg>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- ③ CTA card -->
+                <div class="bg-gradient-to-br from-primary to-blue-800 rounded-xl p-8 text-white text-center shadow-lg">
+                    <div class="text-4xl mb-3">🎓</div>
+                    <h2 class="text-2xl font-heading font-bold mb-2">Ready to Grade?</h2>
+                    <p class="text-blue-200 mb-6 text-sm max-w-md mx-auto">
+                        Head over to <strong>My Subjects</strong> to start entering internal and external marks for your
+                        students. Grades calculate instantly.
+                    </p>
+                    <button onclick="switchTab('subjects')"
+                        class="bg-white text-primary font-bold py-2.5 px-8 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:-translate-y-0.5">
+                        Go to My Subjects →
+                    </button>
+                </div>
+
+            </div><!-- /tab-dashboard -->
+
+            <!-- ══ SUBJECTS TAB ═══════════════════════════════════════════════ -->
+            <div id="tab-subjects" class="hidden">
+
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-3">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">My Subjects</h2>
+                        <p class="text-gray-500 text-sm mt-1">Click <strong>Manage Marks</strong> to enter or edit
+                            student marks.</p>
+                    </div>
+                    <span
+                        class="self-start sm:self-auto bg-blue-50 border border-blue-100 text-secondary text-sm font-bold px-4 py-2 rounded-lg">
+                        {{ subjects|length }} Subject{{ 's' if subjects|length != 1 else '' }} Assigned
+                    </span>
+                </div>
+
+                <!-- ④ Subject cards grid -->
+                <div id="subjects" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {% for subject in subjects %}
+                    <div
+                        class="subject-card bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden relative group">
+
+                        <!-- Accent top strip -->
+                        <div class="h-1.5 bg-gradient-to-r from-secondary to-blue-400"></div>
+
+                        <div class="p-5">
+                            <!-- Header row -->
+                            <div class="flex justify-between items-start mb-4">
+                                <span
+                                    class="text-xs font-bold px-2.5 py-1 bg-blue-50 text-secondary rounded-lg border border-blue-100">
+                                    {{ subject.code }}
+                                </span>
+                                <span
+                                    class="flex items-center gap-1 text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-1 rounded-lg border border-amber-100">
+                                    ⭐ {{ subject.credits }} Credits
+                                </span>
+                            </div>
+
+                            <!-- Subject name -->
+                            <h3 class="text-lg font-bold text-gray-800 mb-1 leading-snug" title="{{ subject.name }}">
+                                {{ subject.name }}
+                            </h3>
+
+                            <!-- ④ Student count badge (if attribute exists) -->
+                            {% if subject.students is defined %}
+                            <p class="text-xs text-gray-400 mb-4">
+                                <svg class="w-3.5 h-3.5 inline mr-1 text-gray-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                {{ subject.students }} Students
+                            </p>
+                            {% else %}
+                            <p class="mb-4"></p>
+                            {% endif %}
+
+                            <!-- Action -->
+                            <div class="flex items-center justify-between pt-3 border-t border-gray-50">
+                                <a href="/teacher/enter_marks/{{ subject.id }}"
+                                    class="inline-flex items-center gap-2 bg-primary hover:bg-blue-900 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors group-hover:shadow-md">
+                                    Manage Marks
+                                    <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform"
+                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </a>
+                                <span class="text-xs text-gray-400 font-medium">{{ loop.index }}/{{ subjects|length
+                                    }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div
+                        class="col-span-full bg-blue-50 border border-blue-100 text-blue-800 p-10 rounded-xl text-center">
+                        <div class="text-5xl mb-3">📚</div>
+                        <p class="font-semibold">No subjects assigned yet.</p>
+                        <p class="text-sm mt-2 opacity-75">Please contact the administration if you believe this is an
+                            error.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+            </div><!-- /tab-subjects -->
+
+        </div><!-- /p-8 -->
+    </main>
+</div>
+
+<script>
+    // ── Tab switching ────────────────────────────────────────────────────────
+    function switchTab(tabId) {
+        ['dashboard', 'subjects'].forEach(nav => {
+            const link = document.getElementById('nav-' + nav);
+            const tab = document.getElementById('tab-' + nav);
+            const active = nav === tabId;
+            if (link) {
+                link.classList.toggle('nav-active', active);
+                link.classList.toggle('text-white', active);
+                link.classList.toggle('font-medium', active);
+                link.classList.toggle('text-blue-200', !active);
+                link.classList.toggle('hover:bg-blue-800', !active);
+            }
+            if (tab) {
+                tab.classList.toggle('hidden', !active);
+                tab.classList.toggle('block', active);
+            }
+        });
+    }
+
+    // ── Time-based greeting ─────────────────────────────────────────────────
+    function setGreeting() {
+        const h = new Date().getHours();
+        const el = document.getElementById('greeting-text');
+        if (!el) return;
+        if (h < 12) el.textContent = 'Good morning ☀️';
+        else if (h < 17) el.textContent = 'Good afternoon 🌤️';
+        else if (h < 21) el.textContent = 'Good evening 🌙';
+        else el.textContent = 'Good night 🌟';
+    }
+
+    // ── Init ─────────────────────────────────────────────────────────────────
+    window.onload = function () {
+        setGreeting();
+        const hash = window.location.hash ? window.location.hash.substring(1) : 'dashboard';
+        if (hash === 'subjects' || hash === 'dashboard') switchTab(hash);
+    };
+</script>
+{% endblock %}

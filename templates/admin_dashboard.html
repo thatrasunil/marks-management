@@ -1,0 +1,830 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="flex h-screen bg-gray-50">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-primary text-white hidden md:flex flex-col shadow-xl">
+        <div class="p-6 border-b border-blue-900 flex items-center space-x-3">
+            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AITS Logo" class="h-10 w-10 rounded shadow-md">
+            <div>
+                <h2 class="text-2xl font-heading font-bold tracking-wider">AITS Results</h2>
+                <p class="text-blue-300 text-xs mt-1">Admin Portal</p>
+            </div>
+        </div>
+        <nav class="flex-grow p-4 space-y-2">
+            <a href="#dashboard" id="nav-dashboard" onclick="switchTab('dashboard')"
+                class="block py-3 px-4 bg-blue-900 rounded-lg text-white font-medium">Dashboard</a>
+            <a href="#students" id="nav-students" onclick="switchTab('students')"
+                class="block py-3 px-4 hover:bg-blue-800 rounded-lg text-blue-200 transition-colors">Students</a>
+            <a href="#faculties" id="nav-faculties" onclick="switchTab('faculties')"
+                class="block py-3 px-4 hover:bg-blue-800 rounded-lg text-blue-200 transition-colors">Faculties</a>
+            <a href="#subjects" id="nav-subjects" onclick="switchTab('subjects')"
+                class="block py-3 px-4 hover:bg-blue-800 rounded-lg text-blue-200 transition-colors">Subjects</a>
+        </nav>
+        <div class="p-4 border-t border-blue-900">
+            <a href="/admin/logout"
+                class="block py-2 px-4 text-center border border-blue-400 hover:bg-blue-800 rounded-lg text-white transition-colors">Logout</a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto p-8">
+        <div class="flex justify-between items-center mb-8">
+            <h1 id="page-title" class="text-3xl font-heading font-bold text-gray-800">Admin Overview</h1>
+            <span
+                class="bg-white px-4 py-2 rounded-lg shadow-sm text-gray-600 border border-gray-100 text-sm font-medium">Current
+                Session: 2026</span>
+        </div>
+
+        <!-- Subjects Tab filter: add semester to subjects -->
+
+        <!-- Dashboard Tab -->
+        <div id="tab-dashboard" class="block">
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center">
+                    <div
+                        class="w-12 h-12 bg-blue-100 text-secondary rounded-full flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path
+                                d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z">
+                            </path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm">Total Students</p>
+                        <p class="text-2xl font-bold text-gray-800">{{ students|length }}</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center">
+                    <div class="w-12 h-12 bg-green-100 text-success rounded-full flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z"
+                                clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm">Faculties</p>
+                        <p class="text-2xl font-bold text-gray-800">{{ teachers|length }}</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center">
+                    <div
+                        class="w-12 h-12 bg-orange-100 text-warning rounded-full flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
+                            <path fill-rule="evenodd"
+                                d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z"
+                                clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm">Subjects</p>
+                        <p class="text-2xl font-bold text-gray-800">{{ subjects|length }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Major Actions -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center mb-8">
+                <h2 class="text-2xl font-heading font-bold text-primary mb-2">Final Result Release</h2>
+                <p class="text-gray-500 mb-6 max-w-2xl mx-auto text-sm">Clicking this button will calculate the final
+                    SGPA &
+                    CGPA
+                    for all students, mark the results as public, and dispatch automatic email notifications containing
+                    their final marks memo.</p>
+
+                <!-- ✅ Shared filter row -->
+                <div class="flex flex-wrap justify-center gap-4 items-end mb-8">
+                    <div class="text-left">
+                        <label
+                            class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Semester</label>
+                        <select id="calc_semester"
+                            class="bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-lg focus:ring-2 focus:ring-primary focus:border-primary block p-2.5 outline-none min-w-[150px]">
+                            <option value="1">Semester 1</option>
+                            <option value="2">Semester 2</option>
+                            <option value="3">Semester 3</option>
+                            <option value="4">Semester 4</option>
+                            <option value="5">Semester 5</option>
+                            <option value="6">Semester 6</option>
+                            <option value="7">Semester 7</option>
+                            <option value="8">Semester 8</option>
+                        </select>
+                    </div>
+                    <div class="text-left">
+                        <label
+                            class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Batch</label>
+                        <select id="calc_batch"
+                            class="bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-lg focus:ring-2 focus:ring-primary focus:border-primary block p-2.5 outline-none min-w-[150px]">
+                            <option value="">All Batches</option>
+                            {% for batch in batches %}
+                            <option value="{{ batch }}">{{ batch }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- ✅ Three action buttons, always on same row -->
+                <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                    <!-- Step 1: Calculate -->
+                    <form action="/admin/calculate_results" method="POST" id="calcForm">
+                        <input type="hidden" name="semester" id="calc_semester_hidden">
+                        <input type="hidden" name="batch" id="calc_batch_hidden">
+                        <button type="submit" onclick="syncFilters()"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-7 rounded-xl shadow-md transition-transform transform hover:-translate-y-0.5 hover:shadow-lg flex items-center gap-2 whitespace-nowrap">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                            1. Calculate Results
+                        </button>
+                    </form>
+
+                    <!-- Export/Review -->
+                    <button onclick="exportResults()"
+                        class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-7 rounded-xl shadow-md transition-transform transform hover:-translate-y-0.5 hover:shadow-lg flex items-center gap-2 whitespace-nowrap">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        Export &amp; Review
+                    </button>
+
+                    <!-- Step 2: Release -->
+                    <form action="/admin/release_results" method="POST" id="releaseForm">
+                        <input type="hidden" name="batch" id="release_batch_hidden">
+                        <button type="submit"
+                            class="bg-primary hover:bg-gray-800 text-white font-bold py-3 px-7 rounded-xl shadow-md transition-transform transform hover:-translate-y-0.5 hover:shadow-lg flex items-center gap-2 whitespace-nowrap"
+                            onclick="return syncAndConfirm()">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                            </svg>
+                            2. Publish to Students
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Students Tab -->
+        <div id="tab-students" class="hidden relative">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 mb-8 overflow-hidden">
+                <!-- Header -->
+                <div
+                    class="p-5 border-b border-gray-100 bg-gray-50 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                    <div>
+                        <h2 class="text-xl font-heading font-bold text-gray-800">Enrolled Students</h2>
+                        <p class="text-xs text-gray-400 mt-0.5">Use filters below to narrow results.</p>
+                    </div>
+                    <button onclick="openModal('addStudentModal')"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center shadow-sm self-start sm:self-auto">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Add Student
+                    </button>
+                </div>
+
+                <!-- ✅ Filter Bar -->
+                <div class="px-5 py-3 border-b border-gray-100 bg-white flex flex-wrap gap-3 items-center">
+                    <!-- Semester filter -->
+                    <div class="flex items-center gap-2">
+                        <label
+                            class="text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Semester</label>
+                        <select id="filter-semester" onchange="applyStudentFilters()"
+                            class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-700 outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer">
+                            <option value="">All</option>
+                            {% for s in range(1, 9) %}
+                            <option value="{{ s }}">Sem {{ s }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Batch filter -->
+                    <div class="flex items-center gap-2">
+                        <label
+                            class="text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Batch</label>
+                        <select id="filter-batch" onchange="applyStudentFilters()"
+                            class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-700 outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer">
+                            <option value="">All</option>
+                            {% for batch in batches %}
+                            <option value="{{ batch }}">{{ batch }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Name / Roll search -->
+                    <div class="flex items-center gap-2 flex-1 min-w-[160px]">
+                        <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+                        </svg>
+                        <input id="filter-search" type="text" placeholder="Search name or roll…"
+                            oninput="applyStudentFilters()"
+                            class="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-blue-300">
+                    </div>
+
+                    <!-- Result count badge + clear -->
+                    <div class="flex items-center gap-2 ml-auto">
+                        <span id="student-count-badge"
+                            class="bg-blue-50 text-blue-700 border border-blue-100 text-xs font-bold px-3 py-1 rounded-full"></span>
+                        <button onclick="clearStudentFilters()"
+                            class="text-xs text-gray-400 hover:text-red-500 font-semibold transition-colors">✕
+                            Clear</button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse" id="studentsTable">
+                        <thead>
+                            <tr class="bg-white text-xs uppercase tracking-wider text-gray-500 font-semibold border-b">
+                                <th class="p-4">Roll Number</th>
+                                <th class="p-4">Name</th>
+                                <th class="p-4">Email</th>
+                                <th class="p-4">Batch</th>
+                                <th class="p-4 text-center">Sem</th>
+                                <th class="p-4">Aadhar (Last 4)</th>
+                                <th class="p-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100" id="studentsTableBody">
+                            {% for student in students %}
+                            <tr class="student-row hover:bg-blue-50/30 transition-colors"
+                                data-semester="{{ student.semester }}" data-batch="{{ student.batch }}"
+                                data-name="{{ student.name | lower }}" data-roll="{{ student.roll_no | lower }}">
+                                <td class="p-4 font-medium text-gray-700">{{ student.roll_no }}</td>
+                                <td class="p-4 text-gray-600">{{ student.name }}</td>
+                                <td class="p-4 text-gray-500">{{ student.email }}</td>
+                                <td class="p-4">
+                                    <span class="text-xs font-semibold text-gray-600 bg-gray-100 px-2 py-1 rounded">{{
+                                        student.batch }}</span>
+                                </td>
+                                <td class="p-4 text-center">
+                                    <span
+                                        class="inline-block bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded-full">
+                                        Sem {{ student.semester }}
+                                    </span>
+                                </td>
+                                <td class="p-4 text-gray-500">{{ student.aadhar_last4 }}</td>
+                                <td class="p-4 flex gap-2 flex-wrap">
+                                    <button
+                                        onclick="openEditStudentModal(`{{ student.id }}`, `{{ student.roll_no }}`, `{{ student.name }}`, `{{ student.email }}`, `{{ student.aadhar_last4 }}`, `{{ student.batch }}`, `{{ student.semester }}`)"
+                                        class="text-xs font-semibold text-blue-600 hover:text-white border border-blue-600 hover:bg-blue-600 py-1 px-3 rounded transition-colors">
+                                        Edit
+                                    </button>
+                                    <form action="/admin/send_single_result" method="POST" class="inline">
+                                        <input type="hidden" name="roll_no" value="{{ student.roll_no }}">
+                                        <button type="submit"
+                                            class="text-xs font-semibold text-primary hover:text-white border border-primary hover:bg-primary py-1 px-3 rounded transition-colors"
+                                            onclick="return confirm('Send result email to {{ student.name }}?');">
+                                            Send Result
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="p-8 text-center text-gray-500">No students found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <!-- Empty state -->
+                    <div id="noStudentsResult" class="hidden py-12 text-center">
+                        <div class="text-4xl mb-3">🔍</div>
+                        <p class="text-gray-500 font-medium">No students match your filters.</p>
+                        <button onclick="clearStudentFilters()" class="mt-3 text-sm text-blue-600 hover:underline">Clear
+                            filters</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Student Modal -->
+        <div id="addStudentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+            <div class="bg-white rounded-xl shadow-lg w-full max-w-md p-6 relative">
+                <button onclick="closeModal('addStudentModal')"
+                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+                <h3 class="text-xl font-bold mb-4 text-gray-800">Add New Student</h3>
+                <form action="/admin/add_student" method="POST" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Roll Number</label>
+                        <input type="text" name="roll_no" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Full Name</label>
+                        <input type="text" name="name" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Email Address</label>
+                        <input type="email" name="email" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Aadhar (Last 4 Digits)</label>
+                        <input type="text" name="aadhar" pattern="\d{4}" maxlength="4" placeholder="e.g. 1234"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Batch / Year</label>
+                        <select name="batch" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                            <option value="">-- Select Batch --</option>
+                            {% for year in range(2022, 2027) %}
+                            <option value="{{ year }}-{{ year + 4 }}">{{ year }}-{{ year + 4 }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Current Semester</label>
+                        <select name="semester" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                            {% for s in range(1, 9) %}
+                            <option value="{{ s }}">Semester {{ s }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="flex justify-end pt-4">
+                        <button type="submit"
+                            class="bg-primary hover:bg-gray-800 text-white font-bold py-2 px-6 rounded-lg transition-transform hover:-translate-y-0.5">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Edit Student Modal -->
+        <div id="editStudentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+            <div class="bg-white rounded-xl shadow-lg w-full max-w-md p-6 relative">
+                <button onclick="closeModal('editStudentModal')"
+                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+                <h3 class="text-xl font-bold mb-4 text-gray-800">Edit Student</h3>
+                <form id="editStudentForm" method="POST" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Roll Number</label>
+                        <input type="text" name="roll_no" id="edit_student_roll" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Full Name</label>
+                        <input type="text" name="name" id="edit_student_name" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Email Address</label>
+                        <input type="email" name="email" id="edit_student_email" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Aadhar (Last 4 Digits)</label>
+                        <input type="text" name="aadhar" id="edit_student_aadhar" pattern="\d{4}" maxlength="4"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Batch / Year</label>
+                        <select name="batch" id="edit_student_batch" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                            <option value="">-- Select Batch --</option>
+                            {% for year in range(2022, 2027) %}
+                            <option value="{{ year }}-{{ year + 4 }}">{{ year }}-{{ year + 4 }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Current Semester</label>
+                        <select name="semester" id="edit_student_semester" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                            {% for s in range(1, 9) %}
+                            <option value="{{ s }}">Semester {{ s }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="flex justify-end pt-4">
+                        <button type="submit"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-transform hover:-translate-y-0.5">Update</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Faculties Tab -->
+        <div id="tab-faculties" class="hidden relative">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 mb-8 overflow-hidden">
+                <div class="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                    <h2 class="text-xl font-heading font-bold text-gray-800">Faculty Members</h2>
+                    <button onclick="openModal('addTeacherModal')"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center shadow-sm">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                            </path>
+                        </svg>
+                        Add Faculty
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-white text-xs uppercase tracking-wider text-gray-500 font-semibold border-b">
+                                <th class="p-4">Faculty Name</th>
+                                <th class="p-4">Email Address</th>
+                                <th class="p-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            {% for teacher in teachers %}
+                            <tr class="hover:bg-blue-50/30 transition-colors">
+                                <td class="p-4 font-medium text-gray-700">{{ teacher.name }}</td>
+                                <td class="p-4 text-gray-500">{{ teacher.email }}</td>
+                                <td class="p-4">
+                                    <button
+                                        onclick="openEditTeacherModal(`{{ teacher.id }}`, `{{ teacher.name }}`, `{{ teacher.email }}`)"
+                                        class="text-xs font-semibold text-blue-600 hover:text-white border border-blue-600 hover:bg-blue-600 py-1 px-3 rounded transition-colors">
+                                        Edit
+                                    </button>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="3" class="p-8 text-center text-gray-500">No faculty members found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subjects Tab -->
+        <div id="tab-subjects" class="hidden relative">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 mb-8 overflow-hidden">
+                <div class="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                    <h2 class="text-xl font-heading font-bold text-gray-800">Managed Subjects</h2>
+                    <button onclick="openModal('addSubjectModal')"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center shadow-sm">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                            </path>
+                        </svg>
+                        Add Subject
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-white text-xs uppercase tracking-wider text-gray-500 font-semibold border-b">
+                                <th class="p-4">Subject Code</th>
+                                <th class="p-4">Subject Name</th>
+                                <th class="p-4">Credits</th>
+                                <th class="p-4">Assigned Faculty</th>
+                                <th class="p-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            {% for subject in subjects %}
+                            <tr class="hover:bg-blue-50/30 transition-colors">
+                                <td class="p-4 font-medium text-gray-700">{{ subject.code }}</td>
+                                <td class="p-4 text-gray-600">{{ subject.name }}</td>
+                                <td class="p-4 text-gray-500">{{ subject.credits }}</td>
+                                <td class="p-4 text-gray-500">
+                                    {% if subject.teacher %}
+                                    {{ subject.teacher.name }}
+                                    {% else %}
+                                    <span class="text-red-500 text-xs font-semibold">Unassigned</span>
+                                    {% endif %}
+                                </td>
+                                <td class="p-4">
+                                    <button
+                                        onclick="openEditSubjectModal(`{{ subject.id }}`, `{{ subject.code }}`, `{{ subject.name }}`, `{{ subject.credits }}`, `{{ subject.teacher_id }}`)"
+                                        class="text-xs font-semibold text-blue-600 hover:text-white border border-blue-600 hover:bg-blue-600 py-1 px-3 rounded transition-colors">
+                                        Edit
+                                    </button>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="p-8 text-center text-gray-500">No subjects found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Teacher Modal -->
+        <div id="addTeacherModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+            <div class="bg-white rounded-xl shadow-lg w-full max-w-md p-6 relative">
+                <button onclick="closeModal('addTeacherModal')"
+                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+                <h3 class="text-xl font-bold mb-4 text-gray-800">Add New Faculty</h3>
+                <form action="/admin/add_teacher" method="POST" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Full Name</label>
+                        <input type="text" name="name" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Email Address</label>
+                        <input type="email" name="email" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Account Password</label>
+                        <input type="password" name="password" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                    </div>
+                    <div class="flex justify-end pt-4">
+                        <button type="submit"
+                            class="bg-primary hover:bg-gray-800 text-white font-bold py-2 px-6 rounded-lg transition-transform hover:-translate-y-0.5">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Edit Teacher Modal -->
+        <div id="editTeacherModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+            <div class="bg-white rounded-xl shadow-lg w-full max-w-md p-6 relative">
+                <button onclick="closeModal('editTeacherModal')"
+                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+                <h3 class="text-xl font-bold mb-4 text-gray-800">Edit Faculty</h3>
+                <form id="editTeacherForm" method="POST" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Full Name</label>
+                        <input type="text" name="name" id="edit_teacher_name" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Email Address</label>
+                        <input type="email" name="email" id="edit_teacher_email" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">New Password <span
+                                class="text-xs text-gray-400 font-normal">(Leave blank to keep current)</span></label>
+                        <input type="password" name="password"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                    </div>
+                    <div class="flex justify-end pt-4">
+                        <button type="submit"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-transform hover:-translate-y-0.5">Update</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Add Subject Modal -->
+        <div id="addSubjectModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+            <div class="bg-white rounded-xl shadow-lg w-full max-w-md p-6 relative">
+                <button onclick="closeModal('addSubjectModal')"
+                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+                <h3 class="text-xl font-bold mb-4 text-gray-800">Add New Subject</h3>
+                <form action="/admin/add_subject" method="POST" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Course Code</label>
+                        <input type="text" name="code" required placeholder="e.g. CS101"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Subject Name</label>
+                        <input type="text" name="name" required placeholder="e.g. Operating Systems"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Credits</label>
+                        <input type="number" name="credits" min="1" max="10" required placeholder="e.g. 4"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Assign Faculty</label>
+                        <select name="teacher_id" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                            <option value="">-- Select Faculty --</option>
+                            {% for instructor in teachers %}
+                            <option value="{{ instructor.id }}">{{ instructor.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="flex justify-end pt-4">
+                        <button type="submit"
+                            class="bg-primary hover:bg-gray-800 text-white font-bold py-2 px-6 rounded-lg transition-transform hover:-translate-y-0.5">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Edit Subject Modal -->
+        <div id="editSubjectModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+            <div class="bg-white rounded-xl shadow-lg w-full max-w-md p-6 relative">
+                <button onclick="closeModal('editSubjectModal')"
+                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+                <h3 class="text-xl font-bold mb-4 text-gray-800">Edit Subject</h3>
+                <form id="editSubjectForm" method="POST" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Course Code</label>
+                        <input type="text" name="code" id="edit_subject_code" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Subject Name</label>
+                        <input type="text" name="name" id="edit_subject_name" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Credits</label>
+                        <input type="number" name="credits" id="edit_subject_credits" min="1" max="10" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Assign Faculty</label>
+                        <select name="teacher_id" id="edit_subject_teacher" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 p-2 border">
+                            <option value="">-- Select Faculty --</option>
+                            {% for instructor in teachers %}
+                            <option value="{{ instructor.id }}">{{ instructor.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="flex justify-end pt-4">
+                        <button type="submit"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-transform hover:-translate-y-0.5">Update</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    // ── Sync shared filter dropdowns into hidden form inputs ─────────────────
+    function syncFilters() {
+        document.getElementById('calc_semester_hidden').value = document.getElementById('calc_semester').value;
+        document.getElementById('calc_batch_hidden').value = document.getElementById('calc_batch').value;
+    }
+
+    function exportResults() {
+        const batch = document.getElementById('calc_batch').value;
+        window.location.href = '/admin/export_results?batch=' + encodeURIComponent(batch);
+    }
+
+    function syncAndConfirm() {
+        document.getElementById('release_batch_hidden').value = document.getElementById('calc_batch').value;
+        return confirm('WARNING: Are you sure you are ready to publish these results and send emails to all students?');
+    }
+
+    function switchTab(tabId) {
+        const navs = ['dashboard', 'students', 'faculties', 'subjects'];
+        navs.forEach(nav => {
+            const el = document.getElementById('nav-' + nav);
+            if (el) {
+                el.className = nav === tabId
+                    ? 'block py-3 px-4 bg-blue-900 rounded-lg text-white font-medium'
+                    : 'block py-3 px-4 hover:bg-blue-800 rounded-lg text-blue-200 transition-colors';
+            }
+            const tab = document.getElementById('tab-' + nav);
+            if (tab) {
+                tab.classList.toggle('hidden', nav !== tabId);
+                tab.classList.toggle('block', nav === tabId);
+            }
+        });
+        const titles = { dashboard: 'Admin Overview', students: 'Students Management', faculties: 'Faculty Management', subjects: 'Subjects Management' };
+        const titleEl = document.getElementById('page-title');
+        if (titleEl) titleEl.innerText = titles[tabId] || '';
+    }
+
+    // ── Student Filters ──────────────────────────────────────────────────────
+    function applyStudentFilters() {
+        const semFilter = document.getElementById('filter-semester').value.trim();
+        const batchFilter = document.getElementById('filter-batch').value.trim();
+        const searchQuery = document.getElementById('filter-search').value.trim().toLowerCase();
+
+        const rows = document.querySelectorAll('.student-row');
+        let visible = 0;
+
+        rows.forEach(row => {
+            const semMatch = !semFilter || row.dataset.semester === semFilter;
+            const batchMatch = !batchFilter || row.dataset.batch === batchFilter;
+            const searchMatch = !searchQuery
+                || row.dataset.name.includes(searchQuery)
+                || row.dataset.roll.includes(searchQuery);
+
+            const show = semMatch && batchMatch && searchMatch;
+            row.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+
+        // Update badge
+        const badge = document.getElementById('student-count-badge');
+        badge.textContent = visible + ' student' + (visible !== 1 ? 's' : '') + ' shown';
+
+        // Toggle empty state
+        const emptyState = document.getElementById('noStudentsResult');
+        const tbody = document.getElementById('studentsTableBody');
+        emptyState.classList.toggle('hidden', visible > 0);
+        tbody.style.display = visible > 0 ? '' : 'none';
+    }
+
+    function clearStudentFilters() {
+        document.getElementById('filter-semester').value = '';
+        document.getElementById('filter-batch').value = '';
+        document.getElementById('filter-search').value = '';
+        applyStudentFilters();
+    }
+
+    // Handle initial state via hash
+    window.onload = function () {
+        // Only run filter init — don't hide tbody on startup
+        const badge = document.getElementById('student-count-badge');
+        const rows = document.querySelectorAll('.student-row');
+        if (badge) badge.textContent = rows.length + ' student' + (rows.length !== 1 ? 's' : '') + ' shown';
+
+        if (window.location.hash) {
+            const hash = window.location.hash.substring(1);
+            if (['dashboard', 'students', 'faculties', 'subjects'].includes(hash)) switchTab(hash);
+        }
+    }
+
+    // Modal Handling Functions
+    function openModal(modalId) {
+        document.getElementById(modalId).classList.remove('hidden');
+        document.getElementById(modalId).classList.add('flex');
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('flex');
+        document.getElementById(modalId).classList.add('hidden');
+    }
+
+    function openEditStudentModal(id, roll, name, email, aadhar, batch, semester) {
+        document.getElementById('editStudentForm').action = '/admin/edit_student/' + id;
+        document.getElementById('edit_student_roll').value = roll;
+        document.getElementById('edit_student_name').value = name;
+        document.getElementById('edit_student_email').value = email;
+        document.getElementById('edit_student_aadhar').value = aadhar;
+        document.getElementById('edit_student_batch').value = batch;
+        document.getElementById('edit_student_semester').value = semester;
+        openModal('editStudentModal');
+    }
+
+    function openEditTeacherModal(id, name, email) {
+        document.getElementById('editTeacherForm').action = '/admin/edit_teacher/' + id;
+        document.getElementById('edit_teacher_name').value = name;
+        document.getElementById('edit_teacher_email').value = email;
+        openModal('editTeacherModal');
+    }
+
+    function openEditSubjectModal(id, code, name, credits, teacher_id) {
+        document.getElementById('editSubjectForm').action = '/admin/edit_subject/' + id;
+        document.getElementById('edit_subject_code').value = code;
+        document.getElementById('edit_subject_name').value = name;
+        document.getElementById('edit_subject_credits').value = credits;
+
+        let teacherSelect = document.getElementById('edit_subject_teacher');
+        teacherSelect.value = teacher_id;
+
+        // If the teacher no longer exists or 'None' was passed as a string, default to empty
+        if (teacherSelect.selectedIndex === -1 || teacher_id === 'None') {
+            teacherSelect.value = '';
+        }
+
+        openModal('editSubjectModal');
+    }
+</script>
+{% endblock %}

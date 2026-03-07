@@ -1,0 +1,537 @@
+{% extends 'base.html' %}
+{% block title %}Enter Marks - {{ subject.name }}{% endblock %}
+
+{% block content %}
+<style>
+    .marks-input.invalid {
+        border-color: #ef4444 !important;
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, .2);
+    }
+
+    .absent-row td {
+        opacity: 0.55;
+    }
+
+    .absent-row .marks-input {
+        background: #f1f5f9;
+    }
+
+    #studentSearch::placeholder {
+        color: #94a3b8;
+    }
+
+    .stat-card {
+        min-width: 90px;
+    }
+
+    #draftBanner {
+        display: none;
+    }
+</style>
+
+<div class="min-h-screen bg-gray-50 pb-12">
+
+    <!-- Header -->
+    <header class="bg-primary text-white sticky top-0 z-20 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-4">
+                    <a href="/teacher/dashboard#subjects" class="text-blue-300 hover:text-white transition-colors"
+                        title="Back">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                    </a>
+                    <div class="flex items-center space-x-3">
+                        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AITS Logo"
+                            class="h-8 w-8 rounded shadow-sm bg-white">
+                        <div>
+                            <h1 class="text-xl font-heading font-bold leading-tight">{{ subject.name }}</h1>
+                            <p class="text-xs text-blue-300">{{ subject.code }} • {{ subject.credits }} Credits</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3 text-sm">
+                    <span id="progress-badge" class="bg-blue-800 px-3 py-1 rounded-full border border-blue-700">
+                        0 / {{ students|length }} Entered
+                    </span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for category, message in messages %}
+        <div class="mb-4 px-4 py-3 rounded-lg border text-sm font-medium
+            {% if category == 'success' %} bg-green-50 text-green-800 border-green-200
+            {% elif category == 'error' %} bg-red-50 text-red-800 border-red-200
+            {% else %} bg-blue-50 text-blue-800 border-blue-100 {% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}{% endif %}
+        {% endwith %}
+
+        <!-- ① Draft restore banner -->
+        <div id="draftBanner"
+            class="mb-4 flex items-center justify-between px-4 py-3 rounded-lg border border-amber-200 bg-amber-50 text-sm text-amber-800">
+            <span>📋 You have an <strong>unsaved draft</strong> from a previous session. Restore it?</span>
+            <div class="flex gap-2 ml-4">
+                <button onclick="restoreDraft()"
+                    class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-3 py-1.5 rounded transition-colors">Restore</button>
+                <button onclick="discardDraft()"
+                    class="border border-amber-400 text-amber-700 hover:bg-amber-100 text-xs font-bold px-3 py-1.5 rounded transition-colors">Discard</button>
+            </div>
+        </div>
+
+        <!-- ② Live Class Stats Bar -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+            <div class="stat-card bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3 text-center">
+                <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-1">Class Avg</p>
+                <p id="stat-avg" class="text-2xl font-black text-primary">—</p>
+            </div>
+            <div class="stat-card bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3 text-center">
+                <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-1">Highest</p>
+                <p id="stat-high" class="text-2xl font-black text-green-600">—</p>
+            </div>
+            <div class="stat-card bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3 text-center">
+                <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-1">Pass ✅</p>
+                <p id="stat-pass" class="text-2xl font-black text-blue-600">—</p>
+            </div>
+            <div class="stat-card bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3 text-center">
+                <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-1">Fail ❌</p>
+                <p id="stat-fail" class="text-2xl font-black text-red-500">—</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+
+            <!-- ③ Search / Filter bar -->
+            <div class="px-4 py-3 border-b border-gray-100 flex items-center gap-3 bg-gray-50">
+                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+                </svg>
+                <input id="studentSearch" type="text" placeholder="Filter by name or roll number…"
+                    class="flex-1 bg-transparent text-sm text-gray-700 outline-none"
+                    oninput="filterStudents(this.value)">
+                <span id="filterCount" class="text-xs text-gray-400 hidden"></span>
+                <button onclick="clearSearch()" class="text-xs text-gray-400 hover:text-gray-600 hidden"
+                    id="clearSearchBtn">✕ Clear</button>
+            </div>
+
+            <form id="marksForm" method="POST" action="/teacher/enter_marks/{{ subject.id }}"
+                onsubmit="return validateAll()" data-total="{{ students | length }}" data-subject="{{ subject.id }}">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse min-w-max">
+                        <thead>
+                            <tr
+                                class="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                                <th class="p-4 w-16 text-center">#</th>
+                                <th class="p-4">Roll Number</th>
+                                <th class="p-4">Student Name</th>
+                                <th class="p-4 w-36 text-center">Internal (max 30)</th>
+                                <th class="p-4 w-36 text-center">External (max 70)</th>
+                                <th class="p-4 w-28 text-center">Total</th>
+                                <th class="p-4 w-24 text-center">Grade</th>
+                                <!-- ④ Absent column -->
+                                <th class="p-4 w-24 text-center text-orange-500">Absent</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 text-sm" id="marksBody">
+                            {% for student in students %}
+                            {% set mark = marks.get(student.id) %}
+                            <tr id="row-{{ loop.index }}" data-name="{{ student.name | lower }}"
+                                data-roll="{{ student.roll_no | lower }}"
+                                class="hover:bg-blue-50/30 transition-colors group">
+                                <td class="p-4 text-center text-gray-400 font-medium">{{ loop.index }}</td>
+                                <td class="p-4 font-medium text-gray-700">{{ student.roll_no }}</td>
+                                <td class="p-4 text-gray-600 font-medium">{{ student.name }}</td>
+                                <td class="p-4">
+                                    <input type="number" step="0.1" min="0" max="30" name="internal_{{ student.id }}"
+                                        id="int_{{ loop.index }}" data-row="{{ loop.index }}"
+                                        data-sid="{{ student.id }}" data-type="internal"
+                                        class="marks-input w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary transition-colors text-center font-semibold text-base"
+                                        value="{{ mark.internal if mark else '' }}" placeholder="0–30"
+                                        autocomplete="off">
+                                </td>
+                                <td class="p-4">
+                                    <input type="number" step="0.1" min="0" max="70" name="external_{{ student.id }}"
+                                        id="ext_{{ loop.index }}" data-row="{{ loop.index }}"
+                                        data-sid="{{ student.id }}" data-type="external"
+                                        class="marks-input w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary transition-colors text-center font-semibold text-base"
+                                        value="{{ mark.external if mark else '' }}" placeholder="0–70"
+                                        autocomplete="off">
+                                </td>
+                                <td class="p-4 text-center">
+                                    <span id="total_{{ loop.index }}" class="font-black text-lg text-gray-800">
+                                        {{ mark.total if mark else '—' }}
+                                    </span>
+                                </td>
+                                <td class="p-4 text-center">
+                                    <span id="grade_{{ loop.index }}" class="inline-flex items-center justify-center px-3 py-1 text-sm font-bold rounded-full
+                                        {% if mark %}
+                                            {% if mark.grade in ['A+', 'A'] %} bg-green-100 text-green-800
+                                            {% elif mark.grade in ['B'] %} bg-blue-100 text-blue-800
+                                            {% elif mark.grade == 'C' %} bg-yellow-100 text-yellow-800
+                                            {% elif mark.grade in ['D', 'E'] %} bg-orange-100 text-orange-800
+                                            {% else %} bg-red-100 text-red-800 {% endif %}
+                                        {% else %} bg-gray-100 text-gray-400 {% endif %}">
+                                        {{ mark.grade if mark else '—' }}
+                                    </span>
+                                </td>
+                                <!-- ④ Absent toggle button -->
+                                <td class="p-4 text-center">
+                                    <button type="button" id="absent_{{ loop.index }}" data-row="{{ loop.index }}"
+                                        onclick="toggleAbsent(this.dataset.row)" class="absent-btn text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all
+                                               border-orange-300 text-orange-600 hover:bg-orange-50"
+                                        title="Mark as Absent (sets 0/0)">
+                                        Absent
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <!-- No-results row (hidden by default) -->
+                    <div id="noResults" class="hidden py-10 text-center text-gray-400 text-sm">
+                        No students match your search.
+                    </div>
+                </div>
+
+                <!-- Footer bar -->
+                <div
+                    class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-between items-center sticky bottom-0 flex-wrap gap-3">
+                    <p class="text-sm text-gray-500">
+                        Press <kbd class="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-xs font-mono">Enter</kbd>
+                        to move between fields. Total &amp; Grade auto-calculate instantly.
+                        <span class="ml-2 text-xs text-amber-600 font-medium" id="draftStatus"></span>
+                    </p>
+                    <button type="submit" id="saveBtn"
+                        class="bg-primary hover:bg-gray-800 text-white font-bold py-2 px-8 rounded-lg shadow transition-transform transform hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
+                        disabled>
+                        Save &amp; Continue →
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+
+<script>
+    const TOTAL_STUDENTS = parseInt(document.getElementById('marksForm').dataset.total, 10);
+    const SUBJECT_ID = document.getElementById('marksForm').dataset.subject;
+    const DRAFT_KEY = 'marks_draft_' + SUBJECT_ID;
+
+    // ─── Grade Calculation ───────────────────────────────────────────────────
+    function calcGrade(total) {
+        if (total >= 90) return { grade: 'A+', cls: 'bg-green-100 text-green-800' };
+        if (total >= 80) return { grade: 'A', cls: 'bg-green-100 text-green-800' };
+        if (total >= 70) return { grade: 'B', cls: 'bg-blue-100 text-blue-800' };
+        if (total >= 60) return { grade: 'C', cls: 'bg-yellow-100 text-yellow-800' };
+        if (total >= 50) return { grade: 'D', cls: 'bg-orange-100 text-orange-800' };
+        if (total >= 40) return { grade: 'E', cls: 'bg-orange-100 text-orange-800' };
+        return { grade: 'F', cls: 'bg-red-100 text-red-800' };
+    }
+
+    // Build flat ordered input list [int_1, ext_1, int_2, ext_2, ...]
+    function getAllInputs() {
+        const inputs = [];
+        for (let i = 1; i <= TOTAL_STUDENTS; i++) {
+            const intEl = document.getElementById('int_' + i);
+            const extEl = document.getElementById('ext_' + i);
+            // Skip hidden (filtered) rows
+            if (intEl && extEl) {
+                inputs.push(intEl);
+                inputs.push(extEl);
+            }
+        }
+        return inputs.filter(Boolean);
+    }
+
+    // ─── Live calculation for a row ──────────────────────────────────────────
+    function recalcRow(row) {
+        const intEl = document.getElementById('int_' + row);
+        const extEl = document.getElementById('ext_' + row);
+        const totalEl = document.getElementById('total_' + row);
+        const gradeEl = document.getElementById('grade_' + row);
+        if (!intEl || !extEl) return;
+
+        const intVal = parseFloat(intEl.value);
+        const extVal = parseFloat(extEl.value);
+
+        // ⑤ Validation highlighting
+        const intOob = intEl.value !== '' && (intVal < 0 || intVal > 30);
+        const extOob = extEl.value !== '' && (extVal < 0 || extVal > 70);
+        intEl.classList.toggle('invalid', intOob);
+        extEl.classList.toggle('invalid', extOob);
+
+        if (!isNaN(intVal) && !isNaN(extVal) && intEl.value !== '' && extEl.value !== '') {
+            const intOk = intVal >= 0 && intVal <= 30;
+            const extOk = extVal >= 0 && extVal <= 70;
+
+            if (intOk && extOk) {
+                const total = intVal + extVal;
+                const { grade, cls } = calcGrade(total);
+                totalEl.textContent = total.toFixed(1).replace(/\.0$/, '');
+                gradeEl.className = 'inline-flex items-center justify-center px-3 py-1 text-sm font-bold rounded-full ' + cls;
+                gradeEl.textContent = grade;
+
+                const rowEl = document.getElementById('row-' + row) || intEl.closest('tr');
+                rowEl.classList.add('bg-green-50');
+                setTimeout(() => rowEl.classList.remove('bg-green-50'), 600);
+            } else {
+                totalEl.textContent = '⚠';
+                gradeEl.className = 'inline-flex items-center justify-center px-3 py-1 text-sm font-bold rounded-full bg-red-100 text-red-800';
+                gradeEl.textContent = 'Err';
+            }
+        } else {
+            totalEl.textContent = '—';
+            gradeEl.className = 'inline-flex items-center justify-center px-3 py-1 text-sm font-bold rounded-full bg-gray-100 text-gray-400';
+            gradeEl.textContent = '—';
+        }
+
+        updateProgress();
+        updateStats();
+        saveDraft();
+    }
+
+    // ─── Progress badge ──────────────────────────────────────────────────────
+    function updateProgress() {
+        let filled = 0;
+        for (let i = 1; i <= TOTAL_STUDENTS; i++) {
+            const intEl = document.getElementById('int_' + i);
+            const extEl = document.getElementById('ext_' + i);
+            if (intEl && extEl && intEl.value !== '' && extEl.value !== '') filled++;
+        }
+        document.getElementById('progress-badge').textContent = filled + ' / ' + TOTAL_STUDENTS + ' Entered';
+
+        const saveBtn = document.getElementById('saveBtn');
+        if (filled === TOTAL_STUDENTS) {
+            saveBtn.disabled = false;
+            saveBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+        } else {
+            saveBtn.disabled = true;
+        }
+    }
+
+    // ─── ① Live Class Stats ──────────────────────────────────────────────────
+    function updateStats() {
+        const totals = [];
+        for (let i = 1; i <= TOTAL_STUDENTS; i++) {
+            const intEl = document.getElementById('int_' + i);
+            const extEl = document.getElementById('ext_' + i);
+            if (!intEl || !extEl || intEl.value === '' || extEl.value === '') continue;
+            const iv = parseFloat(intEl.value), ev = parseFloat(extEl.value);
+            if (!isNaN(iv) && !isNaN(ev) && iv >= 0 && iv <= 30 && ev >= 0 && ev <= 70) {
+                totals.push(iv + ev);
+            }
+        }
+        if (totals.length === 0) {
+            ['stat-avg', 'stat-high', 'stat-pass', 'stat-fail'].forEach(id => {
+                document.getElementById(id).textContent = '—';
+            });
+            return;
+        }
+        const sum = totals.reduce((a, b) => a + b, 0);
+        const avg = sum / totals.length;
+        const high = Math.max(...totals);
+        const pass = totals.filter(t => t >= 40).length;
+        const fail = totals.length - pass;
+
+        document.getElementById('stat-avg').textContent = avg.toFixed(1);
+        document.getElementById('stat-high').textContent = high.toFixed(1).replace(/\.0$/, '');
+        document.getElementById('stat-pass').textContent = pass;
+        document.getElementById('stat-fail').textContent = fail;
+    }
+
+    // ─── ③ Search / Filter ──────────────────────────────────────────────────
+    function filterStudents(query) {
+        const q = query.trim().toLowerCase();
+        const rows = document.querySelectorAll('#marksBody tr');
+        let visible = 0;
+
+        rows.forEach(row => {
+            const name = row.dataset.name || '';
+            const roll = row.dataset.roll || '';
+            const match = !q || name.includes(q) || roll.includes(q);
+            row.style.display = match ? '' : 'none';
+            if (match) visible++;
+        });
+
+        const noRes = document.getElementById('noResults');
+        const countEl = document.getElementById('filterCount');
+        const clearBtn = document.getElementById('clearSearchBtn');
+
+        if (q) {
+            noRes.classList.toggle('hidden', visible > 0);
+            countEl.textContent = visible + ' shown';
+            countEl.classList.remove('hidden');
+            clearBtn.classList.remove('hidden');
+        } else {
+            noRes.classList.add('hidden');
+            countEl.classList.add('hidden');
+            clearBtn.classList.add('hidden');
+        }
+    }
+
+    function clearSearch() {
+        document.getElementById('studentSearch').value = '';
+        filterStudents('');
+    }
+
+    // ─── ④ Absent Toggle ────────────────────────────────────────────────────
+    function toggleAbsent(row) {
+        const intEl = document.getElementById('int_' + row);
+        const extEl = document.getElementById('ext_' + row);
+        const btn = document.getElementById('absent_' + row);
+        const rowEl = document.getElementById('row-' + row);
+
+        const isAbsent = btn.dataset.absent === '1';
+        if (!isAbsent) {
+            // Mark absent — store previous, zero both
+            intEl.dataset.prev = intEl.value;
+            extEl.dataset.prev = extEl.value;
+            intEl.value = '0';
+            extEl.value = '0';
+            intEl.readOnly = true;
+            extEl.readOnly = true;
+            btn.textContent = 'Undo';
+            btn.dataset.absent = '1';
+            btn.classList.replace('text-orange-600', 'text-blue-600');
+            btn.classList.replace('border-orange-300', 'border-blue-300');
+            btn.classList.replace('hover:bg-orange-50', 'hover:bg-blue-50');
+            rowEl.classList.add('absent-row');
+        } else {
+            // Restore
+            intEl.value = intEl.dataset.prev || '';
+            extEl.value = extEl.dataset.prev || '';
+            intEl.readOnly = false;
+            extEl.readOnly = false;
+            btn.textContent = 'Absent';
+            btn.dataset.absent = '0';
+            btn.classList.replace('text-blue-600', 'text-orange-600');
+            btn.classList.replace('border-blue-300', 'border-orange-300');
+            btn.classList.replace('hover:bg-blue-50', 'hover:bg-orange-50');
+            rowEl.classList.remove('absent-row');
+        }
+        recalcRow(row);
+    }
+
+    // ─── ② Auto-save Draft to localStorage ───────────────────────────────────
+    function saveDraft() {
+        const data = {};
+        for (let i = 1; i <= TOTAL_STUDENTS; i++) {
+            const intEl = document.getElementById('int_' + i);
+            const extEl = document.getElementById('ext_' + i);
+            if (intEl && extEl) {
+                data['int_' + i] = intEl.value;
+                data['ext_' + i] = extEl.value;
+            }
+        }
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+        const ds = document.getElementById('draftStatus');
+        ds.textContent = '💾 Draft saved';
+        clearTimeout(saveDraft._t);
+        saveDraft._t = setTimeout(() => ds.textContent = '', 2000);
+    }
+
+    function restoreDraft() {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        for (let i = 1; i <= TOTAL_STUDENTS; i++) {
+            const intEl = document.getElementById('int_' + i);
+            const extEl = document.getElementById('ext_' + i);
+            if (intEl && data['int_' + i] !== undefined) intEl.value = data['int_' + i];
+            if (extEl && data['ext_' + i] !== undefined) extEl.value = data['ext_' + i];
+        }
+        document.getElementById('draftBanner').style.display = 'none';
+        for (let i = 1; i <= TOTAL_STUDENTS; i++) recalcRow(i);
+    }
+
+    function discardDraft() {
+        localStorage.removeItem(DRAFT_KEY);
+        document.getElementById('draftBanner').style.display = 'none';
+    }
+
+    function checkForDraft() {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        // Only show banner if draft has any actual data
+        const hasData = Object.values(data).some(v => v !== '');
+        if (hasData) {
+            document.getElementById('draftBanner').style.display = 'flex';
+        }
+    }
+
+    // Clear draft after successful submit
+    document.getElementById('marksForm').addEventListener('submit', function () {
+        localStorage.removeItem(DRAFT_KEY);
+    });
+
+    // ─── Enter key navigation ────────────────────────────────────────────────
+    document.querySelectorAll('.marks-input').forEach(function (input) {
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const all = getAllInputs();
+                const idx = all.indexOf(this);
+                const next = all[idx + 1];
+                if (next) {
+                    next.focus();
+                    next.select();
+                } else {
+                    document.getElementById('saveBtn').click();
+                }
+            }
+        });
+
+        input.addEventListener('input', function () {
+            recalcRow(parseInt(this.dataset.row));
+        });
+
+        input.addEventListener('focus', function () {
+            this.select();
+        });
+    });
+
+    // ─── Form validation before submit ───────────────────────────────────────
+    function validateAll() {
+        for (let i = 1; i <= TOTAL_STUDENTS; i++) {
+            const intEl = document.getElementById('int_' + i);
+            const extEl = document.getElementById('ext_' + i);
+            if (!intEl || !extEl) continue;
+            const intVal = parseFloat(intEl.value);
+            const extVal = parseFloat(extEl.value);
+            if (intEl.value === '' || extEl.value === '') continue;
+            if (intVal < 0 || intVal > 30) {
+                alert('Row ' + i + ': Internal marks must be between 0 and 30.');
+                intEl.focus();
+                return false;
+            }
+            if (extVal < 0 || extVal > 70) {
+                alert('Row ' + i + ': External marks must be between 0 and 70.');
+                extEl.focus();
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // ─── Init ─────────────────────────────────────────────────────────────────
+    window.addEventListener('DOMContentLoaded', function () {
+        checkForDraft();
+        for (let i = 1; i <= TOTAL_STUDENTS; i++) recalcRow(i);
+        // Focus first empty internal input
+        for (let i = 1; i <= TOTAL_STUDENTS; i++) {
+            const el = document.getElementById('int_' + i);
+            if (el && el.value === '') { el.focus(); break; }
+        }
+    });
+</script>
+{% endblock %}
