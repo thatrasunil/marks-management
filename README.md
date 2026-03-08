@@ -11,6 +11,7 @@ A comprehensive, web-based examination and marks management system built with **
 
 ### 👩‍🏫 Teacher Dashboard
 - **Subject Management:** Teachers can manage marks for subjects assigned to them.
+- **Advanced Marks Entry:** New flow allowing student-by-student mark editing for precise control.
 - **Smart Entry:** Interactive marks entry with real-time feedback.
 - **Auto-Grading:** Automatically calculates totals and grades (A+ to F) based on a 100-mark scale.
 
@@ -19,6 +20,10 @@ A comprehensive, web-based examination and marks management system built with **
 - **Result Processing:** Batch calculation of SGPA/CGPA for specific semesters and batches.
 - **Secure Publication:** One-click "Release Results" to make grades visible on the public portal.
 - **Professional Reports:** Export student results to beautifully formatted **Excel (.xlsx)** sheets.
+
+### 🧪 Data & Utilities
+- **Excel Simulation:** Generate comprehensive simulated student data using `simulate_excel.py` for testing and demonstration.
+- **Bulk Imports:** Scripts for automated student data ingestion and cleanup.
 
 ### 📧 Automated Notifications
 - **Email Delivery:** Integrated with **Flask-Mail** to send results directly to student email addresses upon release.
@@ -29,7 +34,7 @@ A comprehensive, web-based examination and marks management system built with **
 - **Backend:** Flask (Python)
 - **Database:** SQLite (SQLAlchemy ORM)
 - **Email:** Flask-Mail (SMTP Integration)
-- **Formatting:** Openpyxl (Excel Exporting)
+- **Reports:** Openpyxl (Excel Processing)
 - **Frontend:** HTML5, CSS3 (Responsive Design)
 - **Environment:** Python-Dotenv for secure configuration
 
@@ -65,7 +70,12 @@ A comprehensive, web-based examination and marks management system built with **
    MAIL_PASSWORD=your-app-password
    ```
 
-5. **Run the Application:**
+5. **Initialize Database (Optional):**
+   ```bash
+   python seed.py
+   ```
+
+6. **Run the Application:**
    ```bash
    python app.py
    ```
@@ -73,11 +83,22 @@ A comprehensive, web-based examination and marks management system built with **
 
 ## 📁 Project Structure
 
-- `app.py`: Main application logic and routes.
-- `models.py`: Database schema and models.
-- `mail_sender.py`: Email notification utilities.
-- `templates/`: HTML templates for different dashboards.
-- `static/`: CSS and client-side assets.
+### Core Files
+- `app.py`: Main application logic, routes, and controllers.
+- `models.py`: Database schema and SQLAlchemy models.
+- `mail_sender.py`: Email notification utilities and background tasks.
+
+### Utilities & Scripts
+- `simulate_excel.py`: Generates simulated marks and SGPA/CGPA for testing.
+- `import_students.py`: Bulk import students from external sources.
+- `remove_students.py`: Utility for database cleanup.
+- `seed.py`: Populates the database with initial sample data.
+- `save_logo.py`: Helper for managing system branding.
+
+### Assets
+- `templates/`: Jinja2 HTML templates.
+- `static/`: CSS styles, JavaScript, and images.
+- `instance/`: Local database instance (SQLite).
 
 ---
 Built with ❤️ by [Sunil](https://github.com/thatrasunil)

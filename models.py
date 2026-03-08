@@ -43,6 +43,7 @@ class Mark(db.Model):
     total = db.Column(db.Float, nullable=False, default=0.0)
     grade = db.Column(db.String(2), nullable=False, default='F')
     grade_point = db.Column(db.Integer, nullable=False, default=0)
+    external_breakup = db.Column(db.Text, nullable=True) # Stores JSON breakup
 
 class Result(db.Model):
     id = db.Column(db.Integer, primary_key=True)
