@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from models import db, Admin, Teacher, Student, Subject, Mark, Result, AnonymousMarkData, StudentMapping
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_mail import Mail, Message
@@ -58,10 +58,10 @@ def index():
 def student_portal():
     if request.method == 'POST':
         roll_no = request.form.get('roll_no')
-        aadhar = request.form.get('aadhar') # Expected as last 4 digits
+        aadhar = request.form.get('aadhar', '').strip() # Expected as last 4 digits
         
         student = Student.query.filter_by(roll_no=roll_no).first()
-        if student and student.aadhar_last4 == aadhar[-4:]:
+        if student and aadhar and student.aadhar_last4 == aadhar[-4:]:
             result = Result.query.filter_by(student_id=student.id).first()
             if result and result.is_released:
                 marks = Mark.query.filter_by(student_id=student.id).all()
@@ -602,133 +602,29 @@ def edit_teacher(id):
 
 from flask import send_file
 
-@app.route('/admin/upload_external', methods=['POST'])
-def upload_external():
-    if 'admin_id' not in session: return redirect(url_for('admin_login'))
-    
-    subject_id = request.form.get('subject_id')
-    file = request.files.get('file')
-    if not subject_id or not file:
-        flash('Subject and File are required.', 'error')
-        return redirect(url_for('admin_dashboard') + '#dashboard')
-
+@app.route('/admin/approve_subject/<int:subject_id>', methods=['POST'])
+def approve_subject(subject_id):
+    if 'admin_id' not in session: return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     subject = Subject.query.get(subject_id)
-    if subject.processing_status == 'COMPLETED':
-        flash('Subject processing already completed.', 'error')
-        return redirect(url_for('admin_dashboard') + '#dashboard')
-
-    try:
-        df = pd.read_excel(file)
-        if 'Unique_ID' not in df.columns:
-            flash("Missing 'Unique_ID' column in external marks sheet.", 'error')
-            return redirect(url_for('admin_dashboard') + '#dashboard')
-            
-        question_cols = [col for col in df.columns if col.startswith('Q') or col.startswith('q')]
-        if not question_cols:
-            flash("No question columns found (must start with 'Q').", 'error')
-            return redirect(url_for('admin_dashboard') + '#dashboard')
-
-        errors = []
-        for index, row in df.iterrows():
-            unique_id = str(row['Unique_ID']).strip()
-            missing_cols = [q for q in question_cols if pd.isna(row[q])]
-            if missing_cols:
-                errors.append(f"Missing marks for {', '.join(missing_cols)} in Unique_ID {unique_id}")
-                
-        if errors:
-            flash(f"Upload blocked! Found {len(errors)} missing evaluations. Please check the error report.", 'error')
-            session[f'external_errors_{subject_id}'] = errors
-            return redirect(url_for('admin_dashboard') + '#dashboard')
-
-        current_max_version = db.session.query(db.func.max(AnonymousMarkData.upload_version)).filter_by(subject_id=subject_id).scalar() or 0
-        new_version = current_max_version + 1
-
-        for index, row in df.iterrows():
-            unique_id = str(row['Unique_ID']).strip()
-            marks_dict = {q: float(row[q]) for q in question_cols}
-            total = sum(marks_dict.values())
-            
-            # Remove existing for this unique_id + subject_id
-            existing = AnonymousMarkData.query.filter_by(subject_id=subject_id, unique_id=unique_id).first()
-            if existing:
-                db.session.delete(existing)
-                
-            new_mark = AnonymousMarkData(
-                subject_id=subject_id,
-                unique_id=unique_id,
-                marks_data=json.dumps(marks_dict),
-                external_total=total,
-                status='VALID',
-                upload_version=new_version
-            )
-            db.session.add(new_mark)
-        
+    if subject and subject.processing_status == 'SUBMITTED':
+        subject.processing_status = 'APPROVED'
         db.session.commit()
-        flash('External marks uploaded successfully.', 'success')
-    except Exception as e:
-        flash(f'Error processing file: {str(e)}', 'error')
-        
-    return redirect(url_for('admin_dashboard') + '#dashboard')
+        return jsonify({'success': True, 'message': f'Subject {subject.code} approved successfully!'})
+    return jsonify({'success': False, 'message': 'Invalid operation.'}), 400
 
-@app.route('/admin/upload_mapping', methods=['POST'])
-def upload_mapping():
-    if 'admin_id' not in session: return redirect(url_for('admin_login'))
-    
-    subject_id = request.form.get('subject_id')
-    file = request.files.get('file')
-    if not subject_id or not file:
-        flash('Subject and File are required.', 'error')
-        return redirect(url_for('admin_dashboard') + '#dashboard')
-
+@app.route('/admin/reject_subject/<int:subject_id>', methods=['POST'])
+def reject_subject(subject_id):
+    if 'admin_id' not in session: return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     subject = Subject.query.get(subject_id)
-    if subject.processing_status == 'COMPLETED':
-        flash('Subject processing already completed.', 'error')
-        return redirect(url_for('admin_dashboard') + '#dashboard')
-
-    try:
-        df = pd.read_excel(file)
-        if 'Roll_Number' not in df.columns or 'Unique_ID' not in df.columns:
-            flash("Missing 'Roll_Number' or 'Unique_ID' column in mapping sheet.", 'error')
-            return redirect(url_for('admin_dashboard') + '#dashboard')
-
-        StudentMapping.query.filter_by(subject_id=subject_id).delete()
-        
-        for index, row in df.iterrows():
-            roll_number = str(row['Roll_Number']).strip()
-            unique_id = str(row['Unique_ID']).strip()
-            
-            mapping = StudentMapping(
-                subject_id=subject_id,
-                unique_id=unique_id,
-                roll_number=roll_number
-            )
-            db.session.add(mapping)
-        
+    reason = request.form.get('reason', 'No reason provided.')
+    if subject and subject.processing_status == 'SUBMITTED':
+        subject.processing_status = 'REJECTED'
+        subject.rejection_reason = reason
         db.session.commit()
-        flash('Student mapping uploaded successfully.', 'success')
-    except Exception as e:
-        flash(f'Error processing file: {str(e)}', 'error')
-        
-    return redirect(url_for('admin_dashboard') + '#dashboard')
+        return jsonify({'success': True, 'message': f'Subject {subject.code} rejected.'})
+    return jsonify({'success': False, 'message': 'Invalid operation.'}), 400
 
-@app.route('/admin/error_report/<int:subject_id>')
-def error_report(subject_id):
-    if 'admin_id' not in session: return redirect(url_for('admin_login'))
-    
-    subject = Subject.query.get_or_404(subject_id)
-    errors = session.get(f'external_errors_{subject_id}', [])
-    
-    if not errors:
-        flash('No errors found for this subject.', 'info')
-        return redirect(url_for('admin_dashboard') + '#dashboard')
 
-    output = io.BytesIO()
-    df_errors = pd.DataFrame({'Description': errors})
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df_errors.to_excel(writer, index=False, sheet_name='Errors')
-    output.seek(0)
-    
-    return send_file(output, as_attachment=True, download_name=f"{subject.code}_External_Errors.xlsx", mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 
 @app.route('/admin/logout')
@@ -888,30 +784,105 @@ def edit_student_marks(subject_id, student_id):
     subjects = Subject.query.filter_by(teacher_id=teacher_id).all()
     return render_template('edit_student_marks.html', subject=subject, student=student, mark=mark, breakup=breakup, subjects=subjects)
 
-@app.route('/teacher/upload_internal', methods=['POST'])
-def upload_internal():
-    if 'teacher_id' not in session: return redirect(url_for('teacher_login'))
+@app.route('/teacher/upload_external', methods=['POST'])
+def teacher_upload_external():
+    if 'teacher_id' not in session: return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     
     subject_id = request.form.get('subject_id')
     file = request.files.get('file')
-    if not subject_id or not file:
-        flash('Subject and File are required.', 'error')
-        return redirect(url_for('teacher_dashboard') + '#dashboard')
+    if not subject_id or not file: return jsonify({'success': False, 'message': 'Subject and File are required.'}), 400
 
     subject = Subject.query.filter_by(id=subject_id, teacher_id=session['teacher_id']).first()
-    if not subject:
-        flash('Invalid subject.', 'error')
-        return redirect(url_for('teacher_dashboard') + '#dashboard')
+    if not subject: return jsonify({'success': False, 'message': 'Invalid subject.'}), 400
+    if subject.processing_status in ['SUBMITTED', 'APPROVED']: return jsonify({'success': False, 'message': 'Subject locked.'}), 400
 
-    if subject.processing_status == 'COMPLETED':
-        flash('Subject processing already completed. Cannot upload internal marks.', 'error')
-        return redirect(url_for('teacher_dashboard') + '#dashboard')
+    try:
+        df = pd.read_excel(file)
+        if 'Unique_ID' not in df.columns: return jsonify({'success': False, 'message': "Missing 'Unique_ID' column."}), 400
+            
+        question_cols = [col for col in df.columns if col.startswith('Q') or col.startswith('q')]
+        if not question_cols: return jsonify({'success': False, 'message': "No question columns found (must start with 'Q')."}), 400
+
+        exceptions = []
+        for index, row in df.iterrows():
+            unique_id = str(row['Unique_ID']).strip()
+            missing_cols = [q for q in question_cols if pd.isna(row[q])]
+            if missing_cols:
+                exceptions.append(f"Missing marks for {', '.join(missing_cols)} in Unique_ID {unique_id}")
+                
+        if exceptions:
+            session[f'external_errors_{subject_id}'] = exceptions
+            return jsonify({'success': False, 'message': f'Upload blocked! Found {len(exceptions)} errors. Download error report.'}), 400
+
+        current_max_version = db.session.query(db.func.max(AnonymousMarkData.upload_version)).filter_by(subject_id=subject_id).scalar() or 0
+        new_version = current_max_version + 1
+
+        for index, row in df.iterrows():
+            unique_id = str(row['Unique_ID']).strip()
+            marks_dict = {q: float(row[q]) for q in question_cols}
+            total = sum(marks_dict.values())
+            
+            existing = AnonymousMarkData.query.filter_by(subject_id=subject_id, unique_id=unique_id).first()
+            if existing:
+                db.session.delete(existing)
+                
+            new_mark = AnonymousMarkData(
+                subject_id=subject_id, unique_id=unique_id, marks_data=json.dumps(marks_dict),
+                external_total=total, status='VALID', upload_version=new_version
+            )
+            db.session.add(new_mark)
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'External marks uploaded securely!'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+@app.route('/teacher/upload_mapping', methods=['POST'])
+def teacher_upload_mapping():
+    if 'teacher_id' not in session: return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    subject_id = request.form.get('subject_id')
+    file = request.files.get('file')
+    if not subject_id or not file: return jsonify({'success': False, 'message': 'Subject and File are required.'}), 400
+
+    subject = Subject.query.filter_by(id=subject_id, teacher_id=session['teacher_id']).first()
+    if not subject: return jsonify({'success': False, 'message': 'Invalid subject.'}), 400
+    if subject.processing_status in ['SUBMITTED', 'APPROVED']: return jsonify({'success': False, 'message': 'Subject locked.'}), 400
+
+    try:
+        df = pd.read_excel(file)
+        if 'Roll_Number' not in df.columns or 'Unique_ID' not in df.columns:
+            return jsonify({'success': False, 'message': "Missing 'Roll_Number' or 'Unique_ID' column."}), 400
+
+        StudentMapping.query.filter_by(subject_id=subject_id).delete()
+        
+        for index, row in df.iterrows():
+            mapping = StudentMapping(
+                subject_id=subject_id, unique_id=str(row['Unique_ID']).strip(), roll_number=str(row['Roll_Number']).strip()
+            )
+            db.session.add(mapping)
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Student mapping uploaded successfully.'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/teacher/upload_internal', methods=['POST'])
+def upload_internal():
+    if 'teacher_id' not in session: return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    subject_id = request.form.get('subject_id')
+    file = request.files.get('file')
+    if not subject_id or not file: return jsonify({'success': False, 'message': 'Subject and File are required.'}), 400
+
+    subject = Subject.query.filter_by(id=subject_id, teacher_id=session['teacher_id']).first()
+    if not subject: return jsonify({'success': False, 'message': 'Invalid subject.'}), 400
+    if subject.processing_status in ['SUBMITTED', 'APPROVED']: return jsonify({'success': False, 'message': 'Subject locked.'}), 400
 
     try:
         df = pd.read_excel(file)
         if 'Roll_Number' not in df.columns or 'Internal_Marks' not in df.columns:
-            flash("Missing 'Roll_Number' or 'Internal_Marks' column.", 'error')
-            return redirect(url_for('teacher_dashboard') + '#dashboard')
+            return jsonify({'success': False, 'message': "Missing 'Roll_Number' or 'Internal_Marks'."}), 400
 
         updated_count = 0
         for index, row in df.iterrows():
@@ -924,15 +895,34 @@ def upload_internal():
                 if not mark:
                     mark = Mark(student_id=student.id, subject_id=subject.id)
                     db.session.add(mark)
+                
                 mark.internal = internal_marks
+                mark.total = mark.internal + (mark.external or 0.0)
+                grade, gp = calculate_grade(mark.total)
+                mark.grade = grade
+                mark.grade_point = gp
+                
+                # Recalculate student SGPA and reset release status
+                all_marks = Mark.query.filter_by(student_id=student.id).all()
+                total_credits = sum(m.subject.credits for m in all_marks)
+                total_grade_points = sum(m.grade_point * m.subject.credits for m in all_marks)
+                sgpa = round(total_grade_points / total_credits, 2) if total_credits > 0 else 0.0
+                
+                result = Result.query.filter_by(student_id=student.id).first()
+                if not result:
+                    result = Result(student_id=student.id, semester=student.semester)
+                    db.session.add(result)
+                
+                result.sgpa = sgpa
+                result.cgpa = sgpa
+                result.is_released = False
+                
                 updated_count += 1
 
         db.session.commit()
-        flash(f'Internal marks uploaded successfully for {updated_count} students.', 'success')
+        return jsonify({'success': True, 'message': f'Internal marks uploaded successfully for {updated_count} students.'})
     except Exception as e:
-        flash(f'Error processing file: {str(e)}', 'error')
-        
-    return redirect(url_for('teacher_dashboard') + '#dashboard')
+        return jsonify({'success': False, 'message': f'Error processing file: {str(e)}'}), 500
 
 @app.route('/teacher/process_results/<int:subject_id>', methods=['POST'])
 def process_results(subject_id):
@@ -940,9 +930,8 @@ def process_results(subject_id):
     
     subject = Subject.query.filter_by(id=subject_id, teacher_id=session['teacher_id']).first_or_404()
     
-    if subject.processing_status == 'COMPLETED':
-        flash('Subject processing already completed.', 'error')
-        return redirect(url_for('teacher_dashboard') + '#dashboard')
+    if subject.processing_status in ['SUBMITTED', 'APPROVED']:
+        return jsonify({'success': False, 'message': 'Subject locked.'}), 400
         
     subject.processing_status = 'PROCESSING'
     db.session.commit()
@@ -955,8 +944,7 @@ def process_results(subject_id):
         if not current_max_version:
             subject.processing_status = 'NOT_PROCESSED'
             db.session.commit()
-            flash('No external marks found for this subject.', 'error')
-            return redirect(url_for('teacher_dashboard') + '#dashboard')
+            return jsonify({'success': False, 'message': 'No external marks found for this subject.'}), 400
             
         external_data = AnonymousMarkData.query.filter_by(subject_id=subject.id, upload_version=current_max_version).all()
         
@@ -996,8 +984,7 @@ def process_results(subject_id):
             db.session.commit()
             
             session[f'process_errors_{subject.id}'] = errors
-            flash(f'Processing blocked! Found {len(errors)} mapping errors. View Error Report.', 'error')
-            return redirect(url_for('teacher_dashboard') + '#dashboard')
+            return jsonify({'success': False, 'message': f'Processing blocked! Found {len(errors)} mapping errors.'}), 400
             
         for data in external_data:
             roll_no = mapping_dict.get(data.unique_id)
@@ -1018,17 +1005,28 @@ def process_results(subject_id):
                     result.cgpa = sgpa
                     result.is_released = False
                     
-        subject.processing_status = 'COMPLETED'
+        subject.processing_status = 'DRAFT'
         db.session.commit()
-        flash(f'Successfully processed results for {processed_count} students.', 'success')
+        return jsonify({'success': True, 'message': f'Successfully merged and processed {processed_count} records. Ready to Submit!'})
         
     except Exception as e:
         db.session.rollback()
         subject.processing_status = 'NOT_PROCESSED'
         db.session.commit()
-        flash(f'Error processing results: {str(e)}', 'error')
-        
-    return redirect(url_for('teacher_dashboard') + '#dashboard')
+        return jsonify({'success': False, 'message': f'Error processing: {str(e)}'}), 500
+
+@app.route('/teacher/submit_results/<int:subject_id>', methods=['POST'])
+def submit_results(subject_id):
+    if 'teacher_id' not in session: return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    subject = Subject.query.filter_by(id=subject_id, teacher_id=session['teacher_id']).first()
+    if not subject: return jsonify({'success': False, 'message': 'Invalid.'}), 400
+    if subject.processing_status != 'DRAFT' and subject.processing_status != 'REJECTED': 
+        return jsonify({'success': False, 'message': 'Subject must be in draft.'}), 400
+
+    subject.processing_status = 'SUBMITTED'
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Submitted to Admin successfully.'})
 
 @app.route('/teacher/error_report/<int:subject_id>')
 def teacher_error_report(subject_id):

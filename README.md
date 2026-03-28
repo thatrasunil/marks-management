@@ -10,15 +10,16 @@ A comprehensive, web-based examination and marks management system built with **
 - **GPA Tracking:** Shows SGPA and CGPA (calculated automatically).
 
 ### 👩‍🏫 Teacher Dashboard
-- **Subject Management:** Teachers can manage marks for subjects assigned to them.
-- **Advanced Marks Entry:** New flow allowing student-by-student mark editing for precise control.
-- **Smart Entry:** Interactive marks entry with real-time feedback.
-- **Auto-Grading:** Automatically calculates totals and grades (A+ to F) based on a 100-mark scale.
+- **Subject Lifecycle Management:** Complete control over managing marks for assigned subjects.
+- **AJAX Processing Engine:** A seamless, zero-reload 3-stage validation pipeline for ingesting `External Marks`, `Mapping Sheets`, and `Internal Marks` via Excel.
+- **Auto-Grading & Validation:** Automatically catches missing students/mappings, calculates totals, and assigns grades (A+ to F) on a 100-mark scale.
+- **Submission Workflow:** Teachers gather data into a `DRAFT` state, review previews, download error reports, and shoot it to the Admin for approval.
 
 ### 🔐 Admin Dashboard
-- **Centralized Management:** Full CRUD operations for Teachers, Students, and Subjects.
-- **Result Processing:** Batch calculation of SGPA/CGPA for specific semesters and batches.
-- **Secure Publication:** One-click "Release Results" to make grades visible on the public portal.
+- **Centralized Management:** Full CRUD operations for Faculties, Students, and Subjects.
+- **Submissions Inbox:** A dedicated oversight panel to review, `Approve`, or `Reject` result sets submitted by teachers.
+- **Real-time Feedback Loop:** Admins can reject submissions with explicit text feedback that instantly appears on the Teacher's dashboard.
+- **Secure Publication:** One-click "Release Results" to compute global GPA and make grades visible on the public portal.
 - **Professional Reports:** Export student results to beautifully formatted **Excel (.xlsx)** sheets.
 
 ### 🧪 Data & Utilities

@@ -41,7 +41,7 @@
     <div class="fixed top-4 right-4 z-50">
         {% for category, message in messages %}
         <div
-            class="mb-2 p-4 roundedshadow-lg {% if category == 'error' %}bg-error text-white{% elif category == 'success' %}bg-success text-white{% else %}bg-warning text-white{% endif %} transition-all duration-300">
+            class="mb-2 p-4 rounded shadow-lg {% if category == 'error' %}bg-error text-white{% elif category == 'success' %}bg-success text-white{% else %}bg-warning text-white{% endif %} transition-all duration-300">
             {{ message }}
         </div>
         {% endfor %}
@@ -61,6 +61,36 @@
     <footer class="bg-primary text-white py-4 text-center text-sm font-light">
         &copy; 2026 AITS Results. All rights reserved.
     </footer>
+
+    <!-- Global Toast Container -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+    <script>
+        window.showToast = function(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            // Tailwind classes for the toast
+            // pointer-events-auto allows clicking if we ever add a close button
+            toast.className = `px-5 py-3 rounded-lg shadow-xl text-white transform transition-all duration-300 translate-y-4 opacity-0 flex items-center gap-3 pointer-events-auto font-medium text-sm ${type === 'success' ? 'bg-success' : 'bg-error'}`;
+            
+            const icon = type === 'success' 
+                ? '<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
+                : '<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+            
+            toast.innerHTML = `${icon} <span>${message}</span>`;
+            container.appendChild(toast);
+            
+            // Trigger animation
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-4', 'opacity-0');
+            });
+            
+            // Remove after 4 seconds
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        };
+    </script>
 </body>
 
 </html>

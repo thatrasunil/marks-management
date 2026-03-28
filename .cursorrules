@@ -1,0 +1,18 @@
+# Marks Management System context rules
+
+You are working on the Marks Management System.
+Always refer to the `docs/` folder to understand the foundational definitions of the application architecture, tech stack, and objectives.
+
+## Core Architectural Rules
+1. **Teacher vs. Admin Paradigm**: 
+   - A critical workflow has shifted. Teachers are strictly responsible for bulk uploading all localized mapping, external marks, and internal marks via Excel. 
+   - Admins oversee the submissions from Teachers. Do NOT write code that allows the Admin to circumvent the Teacher's verification step by uploading raw data directly for a subject, unless requested specifically as a master override.
+2. **AJAX Form Handlers**:
+   - The application is replacing traditional full-page form submissions. Whenever you add or edit an `upload` or `submission` form, ensure you bind it using the Javascript `fetch()` API and handle Flask returns asynchronously. Never construct a `<form action="..." method="POST">` that triggers a raw HTML reload.
+3. **Database Constraints**:
+   - Only mapped and officially registered `Student` objects can receive marks. Ensure all parsing scripts gracefully skip invalid Roll Numbers.
+   - The `Subject` lifecycle transitions strictly through `NOT_PROCESSED` -> `DRAFT` -> `SUBMITTED` -> `APPROVED`/`REJECTED`.
+
+## Documentation Rules
+- If you add a new major feature, model, or integration, you MUST document the change in the appropriate markdown file inside the `docs/` folder (`architecture.md`, `overview.md`, `tech_stack.md`).
+- Ensure the README.md remains a high-level entry point pointing out these `docs/` files for detailed insights.

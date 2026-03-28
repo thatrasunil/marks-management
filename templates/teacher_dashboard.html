@@ -275,7 +275,7 @@
                                             </span>
                                             <div class="w-16 h-1 bg-gray-100 rounded-full mt-1 overflow-hidden">
                                                 <div class="h-full {% if stats.pass_rate >= 80 %}bg-green-500{% elif stats.pass_rate >= 50 %}bg-blue-500{% else %}bg-red-500{% endif %}"
-                                                    style="width: {{ stats.pass_rate }}%;"></div>
+                                                    {{ ('style="width: ' ~ stats.pass_rate ~ '%"') | safe }}></div>
                                             </div>
                                         </div>
                                         {% else %}
@@ -345,50 +345,76 @@
                 <!-- Marks Processing Control Panel -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 mb-8 p-6">
                     <h2 class="text-xl font-heading font-bold text-gray-800 mb-4 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                         Marks Processing Engine
                     </h2>
                     
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <div>
-                            <h3 class="text-sm font-bold text-gray-700 uppercase mb-2 text-primary">1. Upload Internal Marks</h3>
-                            <p class="text-xs text-gray-500 mb-3">Upload your department internal marks for a selected subject.</p>
-                            <form action="/teacher/upload_internal" method="POST" enctype="multipart/form-data" class="space-y-3">
-                                <select name="subject_id" required class="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-primary focus:border-primary">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 border-b border-gray-100 pb-8">
+                        <!-- External -->
+                        <div class="bg-blue-50/50 p-6 rounded-xl border border-blue-100 flex flex-col justify-between min-h-[240px]">
+                            <div>
+                                <h3 class="text-base font-bold text-primary mb-1">1. External Marks</h3>
+                                <p class="text-[11px] text-blue-600/70 mb-4 leading-snug">Upload the theory exam grades.</p>
+                            </div>
+                            <form class="space-y-3.5" enctype="multipart/form-data" onsubmit="handleAjaxUpload(event, '/teacher/upload_external')">
+                                <select name="subject_id" required class="w-full text-sm rounded-lg p-2.5 border border-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white text-gray-700">
                                     <option value="">-- Select Subject --</option>
-                                    {% for subject in subjects %}
-                                    <option value="{{ subject.id }}">{{ subject.name }} ({{ subject.code }}) - {{ subject.processing_status }}</option>
-                                    {% endfor %}
+                                    {% for subject in subjects %}<option value="{{ subject.id }}">{{ subject.code }} ({{ subject.processing_status }})</option>{% endfor %}
                                 </select>
-                                <input type="file" name="file" accept=".xlsx, .xls" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
-                                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm text-sm w-full transition-transform transform hover:-translate-y-0.5">Upload Internal Marks</button>
+                                <input type="file" name="file" accept=".xlsx" required class="w-full text-xs bg-white border border-gray-200 rounded-lg p-2 text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2.5 rounded-lg shadow-sm transition-transform hover:-translate-y-0.5 mt-1">Upload External</button>
                             </form>
                         </div>
-
-                        <div>
-                            <h3 class="text-sm font-bold text-gray-700 uppercase mb-2 text-emerald-600">2. Process & Merge Results</h3>
-                            <p class="text-xs text-gray-500 mb-3">Merge internal marks with external evaluations. This maps Unique IDs back to Roll Numbers and computes final grades.</p>
-                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 flex flex-col gap-3 justify-between">
-                                <select id="exec_subject_id" class="w-full bg-white border border-gray-300 text-gray-800 text-sm rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
-                                    <option value="">-- Select Subject to Process --</option>
-                                    {% for subject in subjects %}
-                                    <option value="{{ subject.id }}">{{ subject.name }} ({{ subject.processing_status }})</option>
-                                    {% endfor %}
+                        
+                        <!-- Mapping -->
+                        <div class="bg-emerald-50/50 p-6 rounded-xl border border-emerald-100 flex flex-col justify-between min-h-[240px]">
+                            <div>
+                                <h3 class="text-base font-bold text-emerald-700 mb-1">2. Mapping Sheet</h3>
+                                <p class="text-[11px] text-emerald-600/70 mb-4 leading-snug">Decoder sheet mapping Roll Number to Unique ID.</p>
+                            </div>
+                            <form class="space-y-3.5" enctype="multipart/form-data" onsubmit="handleAjaxUpload(event, '/teacher/upload_mapping')">
+                                <select name="subject_id" required class="w-full text-sm rounded-lg p-2.5 border border-gray-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-white text-gray-700">
+                                    <option value="">-- Select Subject --</option>
+                                    {% for subject in subjects %}<option value="{{ subject.id }}">{{ subject.code }} ({{ subject.processing_status }})</option>{% endfor %}
                                 </select>
-                                
-                                <div class="flex gap-2">
-                                    <form method="POST" action="" id="processForm" class="flex-1" onsubmit="event.preventDefault(); var sid=document.getElementById('exec_subject_id').value; if(sid){ this.action='/teacher/process_results/'+sid; this.submit(); } else alert('Select a subject!');">
-                                        <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm text-sm w-full transition-transform transform hover:-translate-y-0.5 whitespace-nowrap">⚡ Merge Results</button>
-                                    </form>
-                                    
-                                    <button type="button" onclick="var sid=document.getElementById('exec_subject_id').value; if(sid) window.location.href='/teacher/export_subject_results/'+sid; else alert('Select subject');" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 font-bold py-2 px-3 rounded-lg text-sm transition-colors" title="Download Final Results">
-                                        ⬇️ Export
-                                    </button>
-                                    
-                                    <button type="button" onclick="var sid=document.getElementById('exec_subject_id').value; if(sid) window.location.href='/teacher/error_report/'+sid; else alert('Select subject');" class="bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 font-bold py-2 px-3 rounded-lg text-sm transition-colors" title="Download Error Report">
-                                        ⚠️ Errors
-                                    </button>
-                                </div>
+                                <input type="file" name="file" accept=".xlsx" required class="w-full text-xs bg-white border border-gray-200 rounded-lg p-2 text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer">
+                                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold py-2.5 rounded-lg shadow-sm transition-transform hover:-translate-y-0.5 mt-1">Upload Mapping</button>
+                            </form>
+                        </div>
+                        
+                        <!-- Internal -->
+                        <div class="bg-purple-50/50 p-6 rounded-xl border border-purple-100 flex flex-col justify-between min-h-[240px]">
+                            <div>
+                                <h3 class="text-base font-bold text-purple-700 mb-1">3. Internal Marks</h3>
+                                <p class="text-[11px] text-purple-600/70 mb-4 leading-snug">Upload the department internal assessment marks.</p>
+                            </div>
+                            <form class="space-y-3.5" enctype="multipart/form-data" onsubmit="handleAjaxUpload(event, '/teacher/upload_internal')">
+                                <select name="subject_id" required class="w-full text-sm rounded-lg p-2.5 border border-gray-200 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 bg-white text-gray-700">
+                                    <option value="">-- Select Subject --</option>
+                                    {% for subject in subjects %}<option value="{{ subject.id }}">{{ subject.code }} ({{ subject.processing_status }})</option>{% endfor %}
+                                </select>
+                                <input type="file" name="file" accept=".xlsx" required class="w-full text-xs bg-white border border-gray-200 rounded-lg p-2 text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer">
+                                <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold py-2.5 rounded-lg shadow-sm transition-transform hover:-translate-y-0.5 mt-1">Upload Internal</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Merge and Submit -->
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-700 uppercase mb-3 text-center">4. Merge & Submit to Admin</h3>
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 flex flex-col items-center max-w-xl mx-auto">
+                            <select id="exec_subject_id" class="w-full mb-4 bg-white border border-gray-300 text-gray-800 text-sm rounded-lg p-2.5 outline-none">
+                                <option value="">-- Select Subject to Validate & Process --</option>
+                                {% for subject in subjects %}
+                                <option value="{{ subject.id }}">{{ subject.code }} ({{ subject.processing_status }})</option>
+                                {% endfor %}
+                            </select>
+                            
+                            <div class="flex flex-wrap gap-2 w-full justify-center">
+                                <button type="button" onclick="processResults()" class="flex-1 min-w-[120px] bg-gray-800 hover:bg-black text-white font-bold py-2.5 rounded-lg text-sm shadow transition-transform hover:-translate-y-0.5">⚡ Merge Results</button>
+                                <button type="button" onclick="exportResults()" class="px-4 border border-gray-300 bg-white hover:bg-gray-100 font-bold rounded-lg text-sm transition-colors">⬇️ Preview</button>
+                                <button type="button" onclick="downloadErrors()" class="px-4 border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 font-bold rounded-lg text-sm transition-colors">⚠️ Errors</button>
+                                <button type="button" onclick="submitToAdmin()" class="flex-1 min-w-[140px] bg-success hover:bg-green-600 text-white font-bold py-2.5 rounded-lg text-sm shadow border border-green-700 transition-transform hover:-translate-y-0.5">🚀 Submit to Admin</button>
                             </div>
                         </div>
                     </div>
@@ -449,6 +475,15 @@
 
                             <!-- Action Buttons -->
                             <div class="flex flex-col gap-2">
+                                {% if subject.rejection_reason and subject.processing_status == 'REJECTED' %}
+                                <div class="bg-red-50 border border-red-200 text-red-700 text-xs p-3 rounded-lg mb-2">
+                                    <strong class="font-bold flex items-center gap-1 mb-1">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                        Admin Feedback
+                                    </strong>
+                                    {{ subject.rejection_reason }}
+                                </div>
+                                {% endif %}
                                 <a href="/teacher/marks_preview/{{ subject.id }}"
                                     class="w-full flex items-center justify-center gap-2 bg-primary hover:bg-blue-900 text-white text-sm font-bold py-4 rounded-xl transition-all shadow-md hover:shadow-lg">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -498,6 +533,73 @@
                 tab.classList.toggle('block', active);
             }
         });
+    }
+
+    async function handleAjaxUpload(e, endpoint) {
+        e.preventDefault();
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const oldText = submitBtn.textContent;
+        submitBtn.textContent = 'Uploading...';
+        submitBtn.disabled = true;
+
+        try {
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                body: new FormData(form)
+            });
+            const data = await res.json();
+            showToast(data.message, data.success ? 'success' : 'error');
+            if(data.success) {
+                form.reset();
+                setTimeout(() => location.reload(), 1500);
+            }
+        } catch(err) {
+            showToast('Request failed.', 'error');
+        } finally {
+            submitBtn.textContent = oldText;
+            submitBtn.disabled = false;
+        }
+    }
+
+    async function processResults() {
+        const sid = document.getElementById('exec_subject_id').value;
+        if(!sid) return showToast('Select a subject!', 'warning');
+        try {
+            const res = await fetch('/teacher/process_results/' + sid, { method: 'POST' });
+            const data = await res.json();
+            showToast(data.message, data.success ? 'success' : 'error');
+            if(data.success) setTimeout(() => location.reload(), 1500);
+        } catch(err) {
+            showToast('Request failed', 'error');
+        }
+    }
+
+    async function submitToAdmin() {
+        const sid = document.getElementById('exec_subject_id').value;
+        if(!sid) return showToast('Select a subject!', 'warning');
+        if(!confirm('Submit to Admin? You cannot modify marks after submission until it is reviewed.')) return;
+
+        try {
+            const res = await fetch('/teacher/submit_results/' + sid, { method: 'POST' });
+            const data = await res.json();
+            showToast(data.message, data.success ? 'success' : 'error');
+            if(data.success) setTimeout(() => location.reload(), 1500);
+        } catch(err) {
+            showToast('Request failed', 'error');
+        }
+    }
+
+    function exportResults() {
+        const sid = document.getElementById('exec_subject_id').value;
+        if(!sid) return showToast('Select a subject!', 'warning');
+        window.location.href = '/teacher/export_subject_results/' + sid;
+    }
+
+    function downloadErrors() {
+        const sid = document.getElementById('exec_subject_id').value;
+        if(!sid) return showToast('Select a subject!', 'warning');
+        window.location.href = '/teacher/error_report/' + sid;
     }
 
     // ── Time-based greeting ─────────────────────────────────────────────────

@@ -32,7 +32,8 @@ class Subject(db.Model):
     name = db.Column(db.String(100), nullable=False)
     credits = db.Column(db.Integer, nullable=False)
     teacher_id = db.Column(db.Integer, db.ForeignKey('teacher.id'), nullable=False)
-    processing_status = db.Column(db.String(20), default='NOT_PROCESSED') # NOT_PROCESSED, PROCESSING, COMPLETED
+    processing_status = db.Column(db.String(20), default='NOT_PROCESSED') # NOT_PROCESSED, DRAFT, SUBMITTED, REJECTED, APPROVED
+    rejection_reason = db.Column(db.String(255), nullable=True)
     marks = db.relationship('Mark', backref='subject', lazy=True)
 
 class Mark(db.Model):
