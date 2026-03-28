@@ -1,9 +1,12 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, session
-from models import db, Admin, Teacher, Student, Subject, Mark, Result
+from models import db, Admin, Teacher, Student, Subject, Mark, Result, AnonymousMarkData, StudentMapping
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_mail import Mail, Message
 import time
+import pandas as pd
+import json
+import io
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -91,6 +94,7 @@ def admin_dashboard():
     subjects = Subject.query.all()
     # Build distinct sorted batch list for dropdowns
     batches = sorted(set(s.batch for s in students if s.batch))
+    
     return render_template('admin_dashboard.html', teachers=teachers, students=students,
                            subjects=subjects, batches=batches)
 
@@ -210,7 +214,7 @@ def release_results():
     # Send emails in a background thread so the browser isn't kept waiting
     try:
         from mail_sender import send_all_results_email
-        queued, skipped = send_all_results_email(app, mail, students_to_email)
+        _, queued, skipped = send_all_results_email(app, mail, students_to_email)
         flash(
             f'Results released! Emails queued for {queued} student(s)'
             + (f' ({skipped} skipped – no marks yet).' if skipped else '.'),
@@ -268,9 +272,9 @@ def export_results():
         
     batch = request.args.get('batch')
     if batch:
-        students = Student.query.filter_by(batch=batch).all()
+        students = Student.query.filter_by(batch=batch).order_by(Student.roll_no).all()
     else:
-        students = Student.query.all()
+        students = Student.query.order_by(Student.roll_no).all()
     
     light_gray_fill = PatternFill(start_color="F9FAFB", end_color="F9FAFB", fill_type="solid")
     white_fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
@@ -333,6 +337,135 @@ def export_results():
     
     return send_file(file_path, as_attachment=True)
 
+@app.route('/teacher/export_subject_results/<int:subject_id>')
+def export_subject_results(subject_id):
+    if 'teacher_id' not in session: return redirect(url_for('teacher_login'))
+    
+    teacher_id = session['teacher_id']
+    subject = Subject.query.filter_by(id=subject_id, teacher_id=teacher_id).first_or_404()
+    
+    import openpyxl
+    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+    from flask import send_file
+    
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = f"Results"
+    
+    # 1. Main Title Row
+    sheet.append([f"Results Report - {subject.name} ({subject.code})"])
+    sheet.merge_cells('A1:I1')
+    title_cell = sheet['A1']
+    title_cell.font = Font(size=14, bold=True, color="FFFFFF")
+    title_cell.fill = PatternFill(start_color="1E3A8A", end_color="1E3A8A", fill_type="solid")
+    title_cell.alignment = Alignment(horizontal='center', vertical='center')
+    sheet.row_dimensions[1].height = 25
+    
+    sheet.append([])
+    
+    # 2. Header Row
+    headers = ["Roll Number", "Student Name", "Internal"]
+    # Section A headers
+    for char in 'abcdefghij':
+        headers.append(f"Q1({char})")
+    # Section B headers
+    for i in range(2, 12):
+        headers.append(f"Q{i}")
+        
+    headers.extend(["External Total", "Final Total", "Grade", "SGPA", "CGPA"])
+    sheet.append(headers)
+    
+    thin_border = Border(left=Side(style='thin', color='D1D5DB'), 
+                         right=Side(style='thin', color='D1D5DB'), 
+                         top=Side(style='thin', color='D1D5DB'), 
+                         bottom=Side(style='thin', color='D1D5DB'))
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="2563EB", end_color="2563EB", fill_type="solid")
+    
+    # Format Headers (row 3)
+    num_cols = len(headers)
+    for col_idx in range(1, num_cols + 1):
+        cell = sheet.cell(row=3, column=col_idx)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+        cell.border = thin_border
+    
+    # Merge title across all columns
+    from openpyxl.utils import get_column_letter
+    last_col = get_column_letter(num_cols)
+    sheet.merge_cells(f'A1:{last_col}1')
+        
+    students = Student.query.order_by(Student.roll_no).all()
+    
+    light_gray_fill = PatternFill(start_color="F9FAFB", end_color="F9FAFB", fill_type="solid")
+    white_fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
+    current_row = 4
+    
+    import json
+    for student in students:
+        mark = Mark.query.filter_by(student_id=student.id, subject_id=subject.id).first()
+        result = Result.query.filter_by(student_id=student.id).first()
+        
+        breakup = json.loads(mark.external_breakup) if mark and mark.external_breakup else None
+        
+        row_data = [
+            student.roll_no,
+            student.name,
+            mark.internal if mark else "-"
+        ]
+        
+        # Populate Section A
+        for char in 'abcdefghij':
+            val = "-"
+            if breakup and 'sec_a' in breakup:
+                val = breakup['sec_a'].get(f'q1{char}', 0)
+            row_data.append(val)
+            
+        # Populate Section B
+        for i in range(2, 12):
+            val = "-"
+            if breakup and 'sec_b' in breakup:
+                val = breakup['sec_b'].get(f'q{i}', 0)
+            row_data.append(val)
+            
+        row_data.extend([
+            mark.external if mark else "-",
+            mark.total if mark else "-",
+            mark.grade if mark else "-",
+            result.sgpa if result else "-",
+            result.cgpa if result else "-"
+        ])
+        sheet.append(row_data)
+        
+        fill_color = light_gray_fill if (current_row % 2 == 0) else white_fill
+        for cell in sheet[current_row]:
+            cell.fill = fill_color
+            cell.border = thin_border
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+            
+        current_row += 1
+        
+    # Auto-adjust column widths
+    from openpyxl.utils import get_column_letter
+    for col_idx in range(1, sheet.max_column + 1):
+        column = get_column_letter(col_idx)
+        max_length = 0
+        for row_idx in range(1, sheet.max_row + 1):
+            cell = sheet.cell(row=row_idx, column=col_idx)
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        sheet.column_dimensions[column].width = max_length + 2
+
+    filename = f"{subject.code}_results.xlsx"
+    file_path = os.path.join(app.root_path, filename)
+    workbook.save(file_path)
+    
+    return send_file(file_path, as_attachment=True)
+
 @app.route('/admin/send_single_result', methods=['POST'])
 def send_single_result():
     if 'admin_id' not in session: return redirect(url_for('admin_login'))
@@ -351,7 +484,7 @@ def send_single_result():
 
     try:
         from mail_sender import send_all_results_email
-        queued, _ = send_all_results_email(app, mail, [student])
+        _, queued, _ = send_all_results_email(app, mail, [student])
         if queued:
             flash(f'Email queued for {student.name} ({student.email})!', 'success')
         else:
@@ -467,6 +600,137 @@ def edit_teacher(id):
         
     return redirect(url_for('admin_dashboard') + '#faculties')
 
+from flask import send_file
+
+@app.route('/admin/upload_external', methods=['POST'])
+def upload_external():
+    if 'admin_id' not in session: return redirect(url_for('admin_login'))
+    
+    subject_id = request.form.get('subject_id')
+    file = request.files.get('file')
+    if not subject_id or not file:
+        flash('Subject and File are required.', 'error')
+        return redirect(url_for('admin_dashboard') + '#dashboard')
+
+    subject = Subject.query.get(subject_id)
+    if subject.processing_status == 'COMPLETED':
+        flash('Subject processing already completed.', 'error')
+        return redirect(url_for('admin_dashboard') + '#dashboard')
+
+    try:
+        df = pd.read_excel(file)
+        if 'Unique_ID' not in df.columns:
+            flash("Missing 'Unique_ID' column in external marks sheet.", 'error')
+            return redirect(url_for('admin_dashboard') + '#dashboard')
+            
+        question_cols = [col for col in df.columns if col.startswith('Q') or col.startswith('q')]
+        if not question_cols:
+            flash("No question columns found (must start with 'Q').", 'error')
+            return redirect(url_for('admin_dashboard') + '#dashboard')
+
+        errors = []
+        for index, row in df.iterrows():
+            unique_id = str(row['Unique_ID']).strip()
+            missing_cols = [q for q in question_cols if pd.isna(row[q])]
+            if missing_cols:
+                errors.append(f"Missing marks for {', '.join(missing_cols)} in Unique_ID {unique_id}")
+                
+        if errors:
+            flash(f"Upload blocked! Found {len(errors)} missing evaluations. Please check the error report.", 'error')
+            session[f'external_errors_{subject_id}'] = errors
+            return redirect(url_for('admin_dashboard') + '#dashboard')
+
+        current_max_version = db.session.query(db.func.max(AnonymousMarkData.upload_version)).filter_by(subject_id=subject_id).scalar() or 0
+        new_version = current_max_version + 1
+
+        for index, row in df.iterrows():
+            unique_id = str(row['Unique_ID']).strip()
+            marks_dict = {q: float(row[q]) for q in question_cols}
+            total = sum(marks_dict.values())
+            
+            # Remove existing for this unique_id + subject_id
+            existing = AnonymousMarkData.query.filter_by(subject_id=subject_id, unique_id=unique_id).first()
+            if existing:
+                db.session.delete(existing)
+                
+            new_mark = AnonymousMarkData(
+                subject_id=subject_id,
+                unique_id=unique_id,
+                marks_data=json.dumps(marks_dict),
+                external_total=total,
+                status='VALID',
+                upload_version=new_version
+            )
+            db.session.add(new_mark)
+        
+        db.session.commit()
+        flash('External marks uploaded successfully.', 'success')
+    except Exception as e:
+        flash(f'Error processing file: {str(e)}', 'error')
+        
+    return redirect(url_for('admin_dashboard') + '#dashboard')
+
+@app.route('/admin/upload_mapping', methods=['POST'])
+def upload_mapping():
+    if 'admin_id' not in session: return redirect(url_for('admin_login'))
+    
+    subject_id = request.form.get('subject_id')
+    file = request.files.get('file')
+    if not subject_id or not file:
+        flash('Subject and File are required.', 'error')
+        return redirect(url_for('admin_dashboard') + '#dashboard')
+
+    subject = Subject.query.get(subject_id)
+    if subject.processing_status == 'COMPLETED':
+        flash('Subject processing already completed.', 'error')
+        return redirect(url_for('admin_dashboard') + '#dashboard')
+
+    try:
+        df = pd.read_excel(file)
+        if 'Roll_Number' not in df.columns or 'Unique_ID' not in df.columns:
+            flash("Missing 'Roll_Number' or 'Unique_ID' column in mapping sheet.", 'error')
+            return redirect(url_for('admin_dashboard') + '#dashboard')
+
+        StudentMapping.query.filter_by(subject_id=subject_id).delete()
+        
+        for index, row in df.iterrows():
+            roll_number = str(row['Roll_Number']).strip()
+            unique_id = str(row['Unique_ID']).strip()
+            
+            mapping = StudentMapping(
+                subject_id=subject_id,
+                unique_id=unique_id,
+                roll_number=roll_number
+            )
+            db.session.add(mapping)
+        
+        db.session.commit()
+        flash('Student mapping uploaded successfully.', 'success')
+    except Exception as e:
+        flash(f'Error processing file: {str(e)}', 'error')
+        
+    return redirect(url_for('admin_dashboard') + '#dashboard')
+
+@app.route('/admin/error_report/<int:subject_id>')
+def error_report(subject_id):
+    if 'admin_id' not in session: return redirect(url_for('admin_login'))
+    
+    subject = Subject.query.get_or_404(subject_id)
+    errors = session.get(f'external_errors_{subject_id}', [])
+    
+    if not errors:
+        flash('No errors found for this subject.', 'info')
+        return redirect(url_for('admin_dashboard') + '#dashboard')
+
+    output = io.BytesIO()
+    df_errors = pd.DataFrame({'Description': errors})
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df_errors.to_excel(writer, index=False, sheet_name='Errors')
+    output.seek(0)
+    
+    return send_file(output, as_attachment=True, download_name=f"{subject.code}_External_Errors.xlsx", mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+
 @app.route('/admin/logout')
 def admin_logout():
     session.pop('admin_id', None)
@@ -491,89 +755,24 @@ def teacher_dashboard():
     teacher = Teacher.query.get(session['teacher_id'])
     
     subjects = Subject.query.filter_by(teacher_id=teacher.id).all()
-    return render_template('teacher_dashboard.html', teacher=teacher, subjects=subjects)
-
-@app.route('/teacher/enter_marks/<int:subject_id>', methods=['GET', 'POST'])
-def enter_marks(subject_id):
-    if 'teacher_id' not in session: return redirect(url_for('teacher_login'))
     
-    teacher_id = session['teacher_id']
-    subject = Subject.query.filter_by(id=subject_id, teacher_id=teacher_id).first_or_404()
-    students = Student.query.all()
-    
-    if request.method == 'POST':
-        for student in students:
-            internal_str = request.form.get(f'internal_{student.id}')
-            external_str = request.form.get(f'external_{student.id}')
-            
-            if internal_str and external_str:
-                try:
-                    internal = float(internal_str)
-                    external = float(external_str)
-                    
-                    if internal > 30.0 or external > 70.0 or internal < 0 or external < 0:
-                        flash(f'Invalid marks for {student.name}. Internal (max 30) and External (max 70).', 'error')
-                        continue
+    # Calculate stats for the Subject Overview
+    subject_stats = {}
+    for sub in subjects:
+        marks = Mark.query.filter_by(subject_id=sub.id).all()
+        if marks:
+            avg_total = sum(m.total for m in marks) / len(marks)
+            pass_count = len([m for m in marks if m.grade != 'F'])
+            pass_rate = (pass_count / len(marks)) * 100
+            subject_stats[sub.id] = {
+                'avg_total': round(avg_total, 1),
+                'pass_rate': round(pass_rate, 1),
+                'student_count': len(marks)
+            }
+        else:
+            subject_stats[sub.id] = {'avg_total': 0, 'pass_rate': 0, 'student_count': 0}
 
-                    total = internal + external
-                    grade, gp = calculate_grade(total)
-                    
-                    mark = Mark.query.filter_by(student_id=student.id, subject_id=subject.id).first()
-                    if not mark:
-                        mark = Mark(student_id=student.id, subject_id=subject.id)
-                        db.session.add(mark)
-                        
-                    mark.internal = internal
-                    mark.external = external
-                    mark.total = total
-                    mark.grade = grade
-                    mark.grade_point = gp
-                except ValueError:
-                    flash(f'Invalid numeric format for {student.name}.', 'error')
-                    continue # Skip invalid marks
-                    
-        db.session.commit()
-        
-        # AUTO-CALCULATE: Compute SGPA/CGPA for each student immediately after marks are saved.
-        # Results are kept is_released=False - admin must explicitly publish to students.
-        affected_students = set()
-        for student in students:
-            if request.form.get(f'internal_{student.id}') and request.form.get(f'external_{student.id}'):
-                affected_students.add(student.id)
-                
-        for student in students:
-            if student.id not in affected_students:
-                continue
-                
-            # Reset released flag for security
-            existing_result = Result.query.filter_by(student_id=student.id).first()
-            if existing_result and existing_result.is_released:
-                existing_result.is_released = False
-                
-            # Re-calculate SGPA from ALL subjects (not just this one)
-            all_marks = Mark.query.filter_by(student_id=student.id).all()
-            if not all_marks:
-                continue
-            
-            total_credits = sum(m.subject.credits for m in all_marks)
-            total_grade_points = sum(m.grade_point * m.subject.credits for m in all_marks)
-            sgpa = round(total_grade_points / total_credits, 2) if total_credits > 0 else 0.0
-            
-            result = existing_result or Result.query.filter_by(student_id=student.id).first()
-            if not result:
-                result = Result(student_id=student.id)
-                db.session.add(result)
-            
-            result.sgpa = sgpa
-            result.cgpa = sgpa  # simplified single-semester CGPA
-            result.is_released = False
-
-        db.session.commit()
-        flash('Marks saved & calculated! Review below. Admin must release before students can see results.', 'success')
-        return redirect(url_for('marks_preview', subject_id=subject_id))
-        
-    existing_marks = {m.student_id: m for m in Mark.query.filter_by(subject_id=subject.id).all()}
-    return render_template('enter_marks.html', subject=subject, students=students, marks=existing_marks)
+    return render_template('teacher_dashboard.html', teacher=teacher, subjects=subjects, subject_stats=subject_stats)
 
 @app.route('/teacher/marks_preview/<int:subject_id>')
 def marks_preview(subject_id):
@@ -581,7 +780,7 @@ def marks_preview(subject_id):
 
     teacher_id = session['teacher_id']
     subject = Subject.query.filter_by(id=subject_id, teacher_id=teacher_id).first_or_404()
-    students = Student.query.all()
+    students = Student.query.order_by(Student.roll_no).all()
 
     # Build a rich preview structure per student
     preview_data = []
@@ -594,7 +793,8 @@ def marks_preview(subject_id):
             'sgpa': result.sgpa if result else None,
         })
 
-    return render_template('marks_preview.html', subject=subject, preview_data=preview_data)
+    subjects = Subject.query.filter_by(teacher_id=teacher_id).all()
+    return render_template('marks_preview.html', subject=subject, preview_data=preview_data, subjects=subjects)
     
 @app.route('/teacher/edit_student_marks/<int:subject_id>/<int:student_id>', methods=['GET', 'POST'])
 def edit_student_marks(subject_id, student_id):
@@ -685,7 +885,169 @@ def edit_student_marks(subject_id, student_id):
         
     mark = Mark.query.filter_by(student_id=student.id, subject_id=subject.id).first()
     breakup = json.loads(mark.external_breakup) if mark and mark.external_breakup else None
-    return render_template('edit_student_marks.html', subject=subject, student=student, mark=mark, breakup=breakup)
+    subjects = Subject.query.filter_by(teacher_id=teacher_id).all()
+    return render_template('edit_student_marks.html', subject=subject, student=student, mark=mark, breakup=breakup, subjects=subjects)
+
+@app.route('/teacher/upload_internal', methods=['POST'])
+def upload_internal():
+    if 'teacher_id' not in session: return redirect(url_for('teacher_login'))
+    
+    subject_id = request.form.get('subject_id')
+    file = request.files.get('file')
+    if not subject_id or not file:
+        flash('Subject and File are required.', 'error')
+        return redirect(url_for('teacher_dashboard') + '#dashboard')
+
+    subject = Subject.query.filter_by(id=subject_id, teacher_id=session['teacher_id']).first()
+    if not subject:
+        flash('Invalid subject.', 'error')
+        return redirect(url_for('teacher_dashboard') + '#dashboard')
+
+    if subject.processing_status == 'COMPLETED':
+        flash('Subject processing already completed. Cannot upload internal marks.', 'error')
+        return redirect(url_for('teacher_dashboard') + '#dashboard')
+
+    try:
+        df = pd.read_excel(file)
+        if 'Roll_Number' not in df.columns or 'Internal_Marks' not in df.columns:
+            flash("Missing 'Roll_Number' or 'Internal_Marks' column.", 'error')
+            return redirect(url_for('teacher_dashboard') + '#dashboard')
+
+        updated_count = 0
+        for index, row in df.iterrows():
+            roll_number = str(row['Roll_Number']).strip()
+            internal_marks = float(row['Internal_Marks']) if pd.notna(row['Internal_Marks']) else 0.0
+            
+            student = Student.query.filter_by(roll_no=roll_number).first()
+            if student:
+                mark = Mark.query.filter_by(student_id=student.id, subject_id=subject.id).first()
+                if not mark:
+                    mark = Mark(student_id=student.id, subject_id=subject.id)
+                    db.session.add(mark)
+                mark.internal = internal_marks
+                updated_count += 1
+
+        db.session.commit()
+        flash(f'Internal marks uploaded successfully for {updated_count} students.', 'success')
+    except Exception as e:
+        flash(f'Error processing file: {str(e)}', 'error')
+        
+    return redirect(url_for('teacher_dashboard') + '#dashboard')
+
+@app.route('/teacher/process_results/<int:subject_id>', methods=['POST'])
+def process_results(subject_id):
+    if 'teacher_id' not in session: return redirect(url_for('teacher_login'))
+    
+    subject = Subject.query.filter_by(id=subject_id, teacher_id=session['teacher_id']).first_or_404()
+    
+    if subject.processing_status == 'COMPLETED':
+        flash('Subject processing already completed.', 'error')
+        return redirect(url_for('teacher_dashboard') + '#dashboard')
+        
+    subject.processing_status = 'PROCESSING'
+    db.session.commit()
+    
+    try:
+        mappings = StudentMapping.query.filter_by(subject_id=subject.id).all()
+        mapping_dict = {m.unique_id: m.roll_number for m in mappings}
+        
+        current_max_version = db.session.query(db.func.max(AnonymousMarkData.upload_version)).filter_by(subject_id=subject.id).scalar()
+        if not current_max_version:
+            subject.processing_status = 'NOT_PROCESSED'
+            db.session.commit()
+            flash('No external marks found for this subject.', 'error')
+            return redirect(url_for('teacher_dashboard') + '#dashboard')
+            
+        external_data = AnonymousMarkData.query.filter_by(subject_id=subject.id, upload_version=current_max_version).all()
+        
+        errors = []
+        processed_count = 0
+        
+        for data in external_data:
+            if data.unique_id not in mapping_dict:
+                errors.append(f"Missing mapping for Unique_ID {data.unique_id}")
+                continue
+                
+            roll_no = mapping_dict[data.unique_id]
+            student = Student.query.filter_by(roll_no=roll_no).first()
+            
+            if not student:
+                errors.append(f"Student with Roll Number {roll_no} not found for Unique_ID {data.unique_id}")
+                continue
+                
+            mark = Mark.query.filter_by(student_id=student.id, subject_id=subject.id).first()
+            if not mark:
+                mark = Mark(student_id=student.id, subject_id=subject.id, internal=0.0)
+                db.session.add(mark)
+                
+            mark.external = data.external_total
+            mark.external_breakup = data.marks_data
+            mark.total = mark.internal + mark.external
+            
+            grade, gp = calculate_grade(mark.total)
+            mark.grade = grade
+            mark.grade_point = gp
+            
+            processed_count += 1
+            
+        if errors:
+            db.session.rollback()
+            subject.processing_status = 'NOT_PROCESSED'
+            db.session.commit()
+            
+            session[f'process_errors_{subject.id}'] = errors
+            flash(f'Processing blocked! Found {len(errors)} mapping errors. View Error Report.', 'error')
+            return redirect(url_for('teacher_dashboard') + '#dashboard')
+            
+        for data in external_data:
+            roll_no = mapping_dict.get(data.unique_id)
+            if roll_no:
+                student = Student.query.filter_by(roll_no=roll_no).first()
+                if student:
+                    all_marks = Mark.query.filter_by(student_id=student.id).all()
+                    total_credits = sum(m.subject.credits for m in all_marks)
+                    total_grade_points = sum(m.grade_point * m.subject.credits for m in all_marks)
+                    sgpa = round(total_grade_points / total_credits, 2) if total_credits > 0 else 0.0
+                    
+                    result = Result.query.filter_by(student_id=student.id).first()
+                    if not result:
+                        result = Result(student_id=student.id)
+                        db.session.add(result)
+                    
+                    result.sgpa = sgpa
+                    result.cgpa = sgpa
+                    result.is_released = False
+                    
+        subject.processing_status = 'COMPLETED'
+        db.session.commit()
+        flash(f'Successfully processed results for {processed_count} students.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        subject.processing_status = 'NOT_PROCESSED'
+        db.session.commit()
+        flash(f'Error processing results: {str(e)}', 'error')
+        
+    return redirect(url_for('teacher_dashboard') + '#dashboard')
+
+@app.route('/teacher/error_report/<int:subject_id>')
+def teacher_error_report(subject_id):
+    if 'teacher_id' not in session: return redirect(url_for('teacher_login'))
+    
+    subject = Subject.query.filter_by(id=subject_id, teacher_id=session['teacher_id']).first_or_404()
+    errors = session.get(f'process_errors_{subject.id}', [])
+    
+    if not errors:
+        flash('No errors found for this subject.', 'info')
+        return redirect(url_for('teacher_dashboard') + '#dashboard')
+
+    output = io.BytesIO()
+    df_errors = pd.DataFrame({'Description': errors})
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df_errors.to_excel(writer, index=False, sheet_name='Errors')
+    output.seek(0)
+    
+    return send_file(output, as_attachment=True, download_name=f"{subject.code}_Processing_Errors.xlsx", mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 @app.route('/teacher/logout')
 def teacher_logout():

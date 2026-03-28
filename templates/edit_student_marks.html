@@ -2,11 +2,41 @@
 {% block title %}Edit Marks - {{ student.name }}{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-50 pb-12">
+<style>
+    .breakup-input.invalid {
+        border-color: #ef4444 !important;
+    }
 
+    .animate-in {
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .pair-card {
+        transition: all 0.2s;
+    }
+
+    .pair-card:hover {
+        border-color: #3b82f6;
+        background-color: #f8faff;
+    }
+</style>
+
+<div class="min-h-screen bg-gray-50 pb-12">
     <!-- Header -->
-    <header class="bg-primary text-white sticky top-0 z-20 shadow-md">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header class="bg-primary text-white sticky top-0 z-40 shadow-xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center">
                 <div class="flex items-center space-x-4">
                     <a href="/teacher/marks_preview/{{ subject.id }}"
@@ -21,23 +51,58 @@
                             class="h-8 w-8 rounded shadow-sm bg-white">
                         <div>
                             <h1 class="text-xl font-heading font-bold leading-tight">Edit Marks</h1>
-                            <p class="text-xs text-blue-300">{{ subject.name }} ({{ subject.code }})</p>
+                            <p class="text-[10px] text-blue-300 uppercase tracking-widest font-black">{{ subject.name }}
+                                • {{ subject.code }}</p>
                         </div>
                     </div>
                 </div>
-                <div class="hidden sm:block">
-                    <span class="text-sm font-semibold opacity-75">Faculty Portal</span>
+
+                <div class="flex items-center space-x-4">
+                    <!-- Subject Switcher -->
+                    <div class="relative group">
+                        <button
+                            class="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-2 border border-white/10 group-hover:border-white/30">
+                            Switch Subject
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div
+                            class="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 hidden group-hover:block z-50 animate-in duration-200">
+                            <div class="px-4 py-2 border-b border-gray-50 mb-1">
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Your Subjects
+                                </p>
+                            </div>
+                            {% for s in subjects %}
+                            <a href="/teacher/marks_preview/{{ s.id }}"
+                                class="flex items-center justify-between px-4 py-2.5 hover:bg-blue-50 transition-colors {% if s.id == subject.id %} bg-blue-50/50 border-r-4 border-primary {% endif %}">
+                                <div class="flex flex-col">
+                                    <span
+                                        class="text-xs font-bold {% if s.id == subject.id %} text-primary {% else %} text-gray-700 {% endif %}">{{
+                                        s.name }}</span>
+                                    <span class="text-[10px] text-gray-400 font-medium">{{ s.code }}</span>
+                                </div>
+                                {% if s.id == subject.id %}<div class="w-1.5 h-1.5 rounded-full bg-primary"></div>{%
+                                endif %}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <span
+                        class="hidden md:block bg-blue-600/30 text-white text-[10px] px-3 py-1 rounded-full border border-blue-400/30 font-bold uppercase">
+                        Individual Entry
+                    </span>
                 </div>
             </div>
         </div>
     </header>
 
     <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-
         <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}{% for category, message in messages %}
-        <div class="mb-6 px-4 py-3 rounded-lg border text-sm font-medium
+        <div class="mb-6 px-4 py-3 rounded-lg border text-sm font-medium animate-in
             {% if category == 'success' %} bg-green-50 text-green-800 border-green-200
             {% elif category == 'error' %} bg-red-50 text-red-800 border-red-200
             {% else %} bg-blue-50 text-blue-800 border-blue-100 {% endif %}">
@@ -46,164 +111,193 @@
         {% endfor %}{% endif %}
         {% endwith %}
 
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="p-6 sm:p-8">
+        <div class="bg-white rounded-3xl shadow-xl border border-gray-200 overflow-hidden animate-in">
+            <div class="p-8">
                 <!-- Student Info Card -->
-                <div class="flex items-center gap-4 mb-8 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                <div
+                    class="flex items-center gap-5 mb-10 p-6 bg-gradient-to-r from-gray-50 to-white rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
+                    <div class="absolute right-0 top-0 opacity-[0.03] scale-150 rotate-12 select-none">
+                        <svg class="w-24 h-24" fill="currentColor" viewBox="0 0 24 24">
+                            <path
+                                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" />
+                        </svg>
+                    </div>
                     <div
-                        class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg">
+                        class="w-16 h-16 rounded-2xl bg-primary text-white flex items-center justify-center font-black text-2xl shadow-lg transform -rotate-3">
                         {{ student.name[0] }}
                     </div>
                     <div>
-                        <h2 class="text-lg font-bold text-gray-800">{{ student.name }}</h2>
-                        <p class="text-sm text-gray-500">Roll Number: <span class="font-mono">{{ student.roll_no
-                                }}</span></p>
+                        <h2 class="text-2xl font-black text-gray-800 leading-tight">{{ student.name }}</h2>
+                        <p class="text-sm text-gray-500 font-bold">Roll: <span
+                                class="text-primary font-mono tracking-tighter">{{ student.roll_no }}</span></p>
                     </div>
                     <div class="ml-auto text-right">
-                        <p class="text-xs text-gray-400 uppercase tracking-widest font-bold">Current Grade</p>
-                        <p class="text-2xl font-black text-primary">{{ mark.grade if mark else '—' }}</p>
+                        <p class="text-[10px] text-gray-400 uppercase tracking-widest font-black mb-1">Current Grade</p>
+                        <p id="current-grade" class="text-4xl font-black text-gray-900 leading-none">
+                            <span class="inline-block transition-all transform hover:scale-110">{{ mark.grade if mark
+                                else '—' }}</span>
+                        </p>
                     </div>
                 </div>
 
                 <form action="/teacher/edit_student_marks/{{ subject.id }}/{{ student.id }}" method="POST"
-                    class="space-y-8">
-                    <div class="space-y-6">
-                        <!-- Internal Marks -->
-                        <div class="p-6 bg-blue-50/50 rounded-2xl border border-blue-100">
-                            <label for="internal" class="block text-sm font-bold text-blue-900 mb-2">Internal Marks (max
-                                30)</label>
-                            <div class="relative max-w-[200px]">
-                                <input type="number" step="0.1" min="0" max="30" name="internal" id="internal"
-                                    value="{{ mark.internal if mark else '' }}" required
-                                    class="w-full px-4 py-3 bg-white border border-blue-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-xl font-bold text-blue-900"
-                                    placeholder="0.0">
-                                <div
-                                    class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-blue-400 text-sm font-mono">
-                                    / 30</div>
-                            </div>
+                    class="space-y-10">
+                    <!-- Internal Marks -->
+                    <div class="p-8 bg-blue-50/50 rounded-3xl border border-blue-100 shadow-sm relative">
+                        <div
+                            class="absolute -top-3 left-8 bg-white px-3 py-1 rounded-full border border-blue-50 text-[10px] font-black text-blue-600 uppercase tracking-widest shadow-sm">
+                            Phase 1</div>
+                        <label for="internal"
+                            class="block text-xs font-black text-blue-900 uppercase tracking-widest mb-4">Internal
+                            Assessment (Max 30)</label>
+                        <div class="relative max-w-[200px]">
+                            <input type="number" step="0.1" min="0" max="30" name="internal" id="internal"
+                                value="{{ '%.1f'|format(mark.internal)|replace('.0', '') if (mark and mark.internal is not none) else '' }}"
+                                required
+                                class="w-full px-6 py-4 bg-white border-2 border-blue-100 rounded-2xl focus:ring-8 focus:ring-blue-100 focus:border-blue-500 transition-all text-3xl font-black text-primary shadow-inner"
+                                placeholder="0.0">
+                            <div
+                                class="absolute inset-y-0 right-0 pr-6 flex items-center pointer-events-none text-blue-300 font-black text-xs">
+                                / 30</div>
                         </div>
+                    </div>
 
-                        <!-- Section A -->
-                        <div class="p-6 bg-white rounded-2xl border border-gray-200 shadow-sm">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="font-bold text-gray-800 flex items-center gap-2">
-                                    <span
-                                        class="w-8 h-8 rounded-lg bg-gray-900 text-white flex items-center justify-center text-xs">A</span>
-                                    Section A: Short Q&A (20 Marks)
-                                </h3>
+                    <!-- External Section A -->
+                    <div class="p-8 bg-white rounded-3xl border border-gray-100 shadow-sm">
+                        <div class="flex items-center justify-between mb-8">
+                            <h3 class="font-black text-gray-800 flex items-center gap-3">
+                                <span
+                                    class="w-10 h-10 rounded-xl bg-gray-900 text-white flex items-center justify-center text-sm shadow-md">A</span>
+                                Section A: Short Questions
+                            </h3>
+                            <div class="flex flex-col items-end">
                                 <span id="sec-a-total-badge"
-                                    class="bg-gray-100 text-gray-700 font-mono text-sm px-3 py-1 rounded-full border border-gray-200">0
+                                    class="bg-gray-900 text-white font-black text-xs px-4 py-1.5 rounded-full shadow-lg">0
                                     / 20</span>
-                            </div>
-                            <p class="text-xs text-gray-400 mb-4 italic">Q.NO 1 consists of 10 questions (a to j), each
-                                for 2 marks.</p>
-                            <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
-                                {% for char in 'abcdefghij' %}
-                                <div class="space-y-1">
-                                    <label
-                                        class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Q1.{{
-                                        char }}</label>
-                                    <input type="number" step="0.5" min="0" max="2" name="q1{{ char }}" data-section="A"
-                                        value="{{ breakup.sec_a['q1' ~ char] if breakup and breakup.sec_a else '0' }}"
-                                        class="breakup-input w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-center font-bold text-gray-700">
-                                </div>
-                                {% endfor %}
+                                <p class="text-[9px] text-gray-400 font-bold uppercase mt-2">10 Questions @ 2 Marks</p>
                             </div>
                         </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                            {% for char in 'abcdefghij' %}
+                            <div class="space-y-2">
+                                <label class="block text-[10px] font-black text-gray-400 uppercase text-center">1.{{
+                                    char }}</label>
+                                <input type="number" step="0.5" min="0" max="2" name="q1{{ char }}" data-section="A"
+                                    value="{{ '%.1f'|format(breakup.sec_a['q1' ~ char])|replace('.0', '') if (breakup and breakup.sec_a and breakup.sec_a['q1' ~ char] is defined) else '0' }}"
+                                    class="breakup-input w-full px-3 py-3 border-2 border-gray-50 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-primary text-center font-black text-gray-700 transition-all shadow-sm">
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
 
-                        <!-- Section B -->
-                        <div class="p-6 bg-white rounded-2xl border border-gray-200 shadow-sm">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="font-bold text-gray-800 flex items-center gap-2">
-                                    <span
-                                        class="w-8 h-8 rounded-lg bg-gray-900 text-white flex items-center justify-center text-xs">B</span>
-                                    Section B: Long Q&A (50 Marks)
-                                </h3>
+                    <!-- External Section B -->
+                    <div class="p-8 bg-white rounded-3xl border border-gray-100 shadow-sm">
+                        <div class="flex items-center justify-between mb-8">
+                            <h3 class="font-black text-gray-800 flex items-center gap-3">
+                                <span
+                                    class="w-10 h-10 rounded-xl bg-gray-900 text-white flex items-center justify-center text-sm shadow-md">B</span>
+                                Section B: Best of Pairs
+                            </h3>
+                            <div class="flex flex-col items-end">
                                 <span id="sec-b-total-badge"
-                                    class="bg-gray-100 text-gray-700 font-mono text-sm px-3 py-1 rounded-full border border-gray-200">0
+                                    class="bg-blue-600 text-white font-black text-xs px-4 py-1.5 rounded-full shadow-lg">0
                                     / 50</span>
+                                <p class="text-[9px] text-gray-400 font-bold uppercase mt-2">5 Pairs @ 10 Marks</p>
                             </div>
-                            <p class="text-xs text-gray-400 mb-6 italic">Answer one from each pair. If both are
-                                answered, the best score will be taken.</p>
+                        </div>
 
-                            <div class="space-y-6">
-                                {% set pairs = [ (2,3), (4,5), (6,7), (8,9), (10,11) ] %}
-                                {% for p1, p2 in pairs %}
+                        <div class="space-y-6">
+                            {% set pairs = [ (2,3), (4,5), (6,7), (8,9), (10,11) ] %}
+                            {% for p1, p2 in pairs %}
+                            <div
+                                class="pair-card p-6 bg-gray-50/50 rounded-3xl border border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-6 relative">
                                 <div
-                                    class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200 relative">
-                                    <div
-                                        class="absolute -top-3 left-4 bg-white px-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest border border-gray-100 rounded">
-                                        Unit {{ loop.index }}</div>
-                                    <div class="space-y-1">
-                                        <label class="block text-[10px] font-bold text-gray-500 uppercase">Question {{
-                                            p1 }}</label>
-                                        <input type="number" step="0.5" min="0" max="10" name="q{{ p1 }}"
-                                            data-section="B" data-pair="{{ loop.index }}"
-                                            value="{{ breakup.sec_b['q' ~ p1] if breakup and breakup.sec_b else '0' }}"
-                                            class="breakup-input w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-center font-bold text-gray-700 shadow-sm">
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="block text-[10px] font-bold text-gray-500 uppercase">Question {{
-                                            p2 }}</label>
-                                        <input type="number" step="0.5" min="0" max="10" name="q{{ p2 }}"
-                                            data-section="B" data-pair="{{ loop.index }}"
-                                            value="{{ breakup.sec_b['q' ~ p2] if breakup and breakup.sec_b else '0' }}"
-                                            class="breakup-input w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-center font-bold text-gray-700 shadow-sm">
-                                    </div>
-                                    <div class="col-span-full flex justify-end">
-                                        <span
-                                            class="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded pair-best-hint-{{ loop.index }}">Selected:
-                                            0.0</span>
-                                    </div>
+                                    class="absolute -top-3 left-6 bg-white px-3 py-1 rounded-full border border-gray-50 text-[9px] font-black text-blue-400 uppercase tracking-widest shadow-sm">
+                                    Unit {{ loop.index }}</div>
+                                <div class="space-y-2">
+                                    <label
+                                        class="block text-[10px] font-black text-gray-400 uppercase flex justify-between">
+                                        <span>Question {{ p1 }}</span>
+                                        <span class="text-blue-300">Max 10</span>
+                                    </label>
+                                    <input type="number" step="0.5" min="0" max="10" name="q{{ p1 }}" data-section="B"
+                                        data-pair="{{ loop.index }}"
+                                        value="{{ '%.1f'|format(breakup.sec_b['q' ~ p1])|replace('.0', '') if (breakup and breakup.sec_b and breakup.sec_b['q' ~ p1] is defined) else '0' }}"
+                                        class="breakup-input w-full px-4 py-3 border-2 border-white bg-white rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-primary text-center font-black text-gray-800 shadow-sm transition-all">
                                 </div>
-                                {% endfor %}
+                                <div class="space-y-2">
+                                    <label
+                                        class="block text-[10px] font-black text-gray-400 uppercase flex justify-between">
+                                        <span>Question {{ p2 }}</span>
+                                        <span class="text-blue-300">Max 10</span>
+                                    </label>
+                                    <input type="number" step="0.5" min="0" max="10" name="q{{ p2 }}" data-section="B"
+                                        data-pair="{{ loop.index }}"
+                                        value="{{ '%.1f'|format(breakup.sec_b['q' ~ p2])|replace('.0', '') if (breakup and breakup.sec_b and breakup.sec_b['q' ~ p2] is defined) else '0' }}"
+                                        class="breakup-input w-full px-4 py-3 border-2 border-white bg-white rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-primary text-center font-black text-gray-800 shadow-sm transition-all">
+                                </div>
+                                <div class="col-span-full flex justify-between items-center px-2">
+                                    <p class="text-[9px] text-gray-400 font-bold italic">* Best of these two will be
+                                        counted</p>
+                                    <span
+                                        class="text-[10px] font-black text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/10 pair-best-hint-{{ loop.index }}">Selected:
+                                        0.0</span>
+                                </div>
                             </div>
-                        </div>
-
-                        <!-- External Summary -->
-                        <div class="flex items-center justify-between p-4 bg-gray-900 text-white rounded-xl">
-                            <div>
-                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Calculated
-                                    External</p>
-                                <p class="text-xs text-gray-500">Sec A + Sec B (Best of 2)</p>
-                            </div>
-                            <div class="text-right">
-                                <span id="external-total-display" class="text-3xl font-black">0.0</span>
-                                <span class="text-gray-500 text-sm">/ 70</span>
-                            </div>
+                            {% endfor %}
                         </div>
                     </div>
 
-                    <!-- Total Live Update (Simple JS) -->
-                    <div class="pt-4 border-t border-gray-100">
-                        <div class="flex justify-between items-center text-gray-500 text-sm mb-2">
-                            <span>Computed Total:</span>
-                            <span id="total-display" class="font-bold text-gray-800 text-xl">
-                                {{ mark.total if mark else '0.0' }}
-                            </span>
+                    <!-- Summary & Actions -->
+                    <div class="pt-10 border-t border-gray-100">
+                        <div class="grid grid-cols-2 gap-6 mb-10">
+                            <div
+                                class="p-6 bg-gray-900 rounded-3xl text-white shadow-xl transform hover:scale-[1.02] transition-all">
+                                <p
+                                    class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">
+                                    External Total</p>
+                                <div class="flex items-end gap-2">
+                                    <span id="external-total-display"
+                                        class="text-4xl font-black leading-none">0.0</span>
+                                    <span class="text-gray-500 font-bold mb-1">/ 70</span>
+                                </div>
+                            </div>
+                            <div
+                                class="p-6 bg-blue-600 rounded-3xl text-white shadow-xl transform hover:scale-[1.02] transition-all relative overflow-hidden">
+                                <div
+                                    class="absolute inset-0 bg-white/10 opacity-0 hover:opacity-100 transition-opacity">
+                                </div>
+                                <p
+                                    class="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-1 leading-none">
+                                    Final Weighted Total</p>
+                                <div class="flex items-end gap-2">
+                                    <span id="total-display" class="text-4xl font-black leading-none">0.0</span>
+                                    <span class="text-blue-300 font-bold mb-1">/ 100</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                            <div id="progress-bar" class="h-full bg-blue-600 transition-all duration-300"></div>
-                        </div>
-                    </div>
 
-                    <!-- Actions -->
-                    <div class="flex flex-col sm:flex-row gap-3 pt-4">
-                        <button type="submit"
-                            class="flex-1 bg-primary hover:bg-gray-800 text-white font-bold py-4 px-6 rounded-xl shadow-lg transition-all transform hover:-translate-y-0.5">
-                            Save Marks
-                        </button>
-                        <a href="/teacher/marks_preview/{{ subject.id }}"
-                            class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-4 px-6 rounded-xl text-center transition-all">
-                            Cancel
-                        </a>
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <button type="submit"
+                                class="flex-1 bg-primary hover:bg-gray-800 text-white font-black py-5 px-8 rounded-3xl shadow-xl transition-all transform hover:-translate-y-1 active:scale-95 uppercase tracking-widest flex items-center justify-center gap-3">
+                                Save Final Marks
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                </svg>
+                            </button>
+                            <a href="/teacher/marks_preview/{{ subject.id }}"
+                                class="flex-1 bg-white border-2 border-gray-100 hover:border-gray-200 text-gray-500 hover:text-gray-700 font-black py-5 px-8 rounded-3xl text-center transition-all uppercase tracking-widest">
+                                Discard &amp; Back
+                            </a>
+                        </div>
                     </div>
                 </form>
             </div>
         </div>
 
-        <p class="mt-6 text-center text-sm text-gray-400">
-            Internal and external marks are required. Grades and SGPA will be automatically updated upon saving.
+        <p class="mt-8 text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+            Grading logic strictly follows AITS BEST-OF-TWO regulations.
         </p>
     </main>
 </div>
@@ -212,20 +306,29 @@
     const internalInput = document.getElementById('internal');
     const totalDisplay = document.getElementById('total-display');
     const externalTotalDisplay = document.getElementById('external-total-display');
-    const progressBar = document.getElementById('progress-bar');
     const breakupInputs = document.querySelectorAll('.breakup-input');
     const secATotalBadge = document.getElementById('sec-a-total-badge');
     const secBTotalBadge = document.getElementById('sec-b-total-badge');
+    const gradeBadge = document.getElementById('current-grade');
+
+    function calcGrade(total) {
+        if (total >= 90) return 'A+';
+        if (total >= 80) return 'A';
+        if (total >= 70) return 'B';
+        if (total >= 60) return 'C';
+        if (total >= 40) return 'E';
+        return 'F';
+    }
 
     function updateTotal() {
-        // Section A Calculation
+        // Section A
         let secATotal = 0;
         document.querySelectorAll('.breakup-input[data-section="A"]').forEach(input => {
             secATotal += parseFloat(input.value) || 0;
         });
-        secATotalBadge.textContent = secATotal.toFixed(1) + ' / 20';
+        secATotalBadge.textContent = secATotal.toFixed(1).replace(/\.0$/, '') + ' / 20';
 
-        // Section B Calculation (Best of Two)
+        // Section B (Best of Two)
         let secBTotal = 0;
         for (let i = 1; i <= 5; i++) {
             const pairInputs = document.querySelectorAll(`.breakup-input[data-section="B"][data-pair="${i}"]`);
@@ -235,29 +338,22 @@
             secBTotal += best;
 
             const hint = document.querySelector(`.pair-best-hint-${i}`);
-            if (hint) hint.textContent = 'Selected: ' + best.toFixed(1);
+            if (hint) hint.textContent = 'Selected: ' + best.toFixed(1).replace(/\.0$/, '');
         }
-        secBTotalBadge.textContent = secBTotal.toFixed(1) + ' / 50';
+        secBTotalBadge.textContent = secBTotal.toFixed(1).replace(/\.0$/, '') + ' / 50';
 
-        // Summary Totals
+        // Overall
         const externalTotal = secATotal + secBTotal;
-        externalTotalDisplay.textContent = externalTotal.toFixed(1);
+        externalTotalDisplay.textContent = externalTotal.toFixed(1).replace(/\.0$/, '');
 
         const internalVal = parseFloat(internalInput.value) || 0;
         const overallTotal = internalVal + externalTotal;
+        totalDisplay.textContent = overallTotal.toFixed(1).replace(/\.0$/, '');
 
-        totalDisplay.textContent = overallTotal.toFixed(1);
-
-        // Progress Bar
-        const progressPercent = Math.min(100, overallTotal);
-        progressBar.style.width = progressPercent + '%';
-
-        if (overallTotal >= 40) {
-            progressBar.classList.remove('bg-red-500');
-            progressBar.classList.add('bg-blue-600');
-        } else {
-            progressBar.classList.remove('bg-blue-600');
-            progressBar.classList.add('bg-red-500');
+        // Live Grade Preview
+        const newGrade = calcGrade(overallTotal);
+        if (gradeBadge) {
+            gradeBadge.querySelector('span').textContent = newGrade;
         }
     }
 
@@ -266,7 +362,6 @@
         input.addEventListener('input', updateTotal);
     });
 
-    // Initial update
     window.addEventListener('load', updateTotal);
 </script>
 {% endblock %}

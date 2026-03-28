@@ -17,19 +17,19 @@ def _send_in_background(app, mail, students_data):
             html_body = _build_email_html(s)
             try:
                 msg = Message(
-                    subject=f"Semester {s['semester']} Result – Annamacharya Institute of Technology & Sciences, Tirupati",
+                    subject=f"Semester {s['semester']} Result - Annamacharya Institute of Technology & Sciences, Tirupati",
                     recipients=[s['email']],
                     html=html_body,
                 )
                 mail.send(msg)
-                print(f"[MAIL] ✅  Sent to {s['email']}")
+                print(f"[MAIL] Sent successfully to {s['email']}")
                 sent += 1
                 time.sleep(1)          # respect Gmail rate limits
             except Exception as e:
-                print(f"[MAIL] ❌  Failed for {s['email']}: {e}")
+                print(f"[MAIL] ERROR: Failed for {s['email']}: {e}")
                 failed += 1
 
-        print(f"[MAIL] Done – {sent} sent, {failed} failed.")
+        print(f"[MAIL] SUMMARY: {sent} sent successfully, {failed} failed.")
 
 
 def send_all_results_email(app, mail, students):
@@ -82,8 +82,9 @@ def send_all_results_email(app, mail, students):
             daemon=True,
         )
         t.start()
+        return t, len(students_data), skipped
 
-    return len(students_data), skipped
+    return None, 0, skipped
 
 
 # ─── HTML email builder ───────────────────────────────────────────────────────

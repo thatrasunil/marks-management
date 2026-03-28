@@ -228,38 +228,85 @@
                     </div>
                 </div>
 
-                <!-- ② Subject quick-list with progress bars -->
+                <!-- ② Subject Overview Table -->
                 {% if subjects %}
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                        <h2 class="font-bold text-gray-700 text-sm uppercase tracking-wide">Subject Overview</h2>
-                        <button onclick="switchTab('subjects')"
-                            class="text-xs text-secondary font-semibold hover:underline">View All →</button>
+                    <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                        <h2 class="font-bold text-gray-800 text-sm uppercase tracking-wide">Detailed Subject Overview
+                        </h2>
                     </div>
-                    <div class="divide-y divide-gray-50">
-                        {% for subject in subjects %}
-                        <div
-                            class="px-6 py-4 flex items-center justify-between gap-4 hover:bg-gray-50 transition-colors">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <span
-                                    class="shrink-0 w-8 h-8 rounded-lg bg-blue-100 text-secondary text-xs font-bold flex items-center justify-center">
-                                    {{ loop.index }}
-                                </span>
-                                <div class="min-w-0">
-                                    <p class="font-semibold text-gray-800 text-sm truncate">{{ subject.name }}</p>
-                                    <p class="text-xs text-gray-400">{{ subject.code }} • {{ subject.credits }} cr</p>
-                                </div>
-                            </div>
-                            <a href="/teacher/marks_preview/{{ subject.id }}"
-                                class="shrink-0 inline-flex items-center gap-1 text-xs font-bold text-secondary hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
-                                View Students
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                        d="M9 5l7 7-7 7" />
-                                </svg>
-                            </a>
-                        </div>
-                        {% endfor %}
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-max">
+                            <thead>
+                                <tr
+                                    class="bg-white text-xs uppercase tracking-wider text-gray-500 font-semibold border-b">
+                                    <th class="p-4 text-center w-12">#</th>
+                                    <th class="p-4">Subject</th>
+                                    <th class="p-4 text-center">Students</th>
+                                    <th class="p-4 text-center">Avg. Marks</th>
+                                    <th class="p-4 text-center">Pass Rate</th>
+                                    <th class="p-4 text-center">Status</th>
+                                    <th class="p-4 text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-50 text-sm">
+                                {% for subject in subjects %}
+                                {% set stats = subject_stats[subject.id] %}
+                                <tr class="hover:bg-blue-50/30 transition-colors">
+                                    <td class="p-4 text-center text-gray-400">{{ loop.index }}</td>
+                                    <td class="p-4">
+                                        <div class="flex flex-col">
+                                            <span class="font-bold text-gray-800">{{ subject.name }}</span>
+                                            <span class="text-xs text-gray-400">{{ subject.code }} • {{ subject.credits
+                                                }} Credits</span>
+                                        </div>
+                                    </td>
+                                    <td class="p-4 text-center font-medium text-gray-700">{{ stats.student_count }}</td>
+                                    <td class="p-4 text-center">
+                                        <span class="font-bold text-primary">{{ stats.avg_total if stats.student_count >
+                                            0 else '—' }}</span>
+                                    </td>
+                                    <td class="p-4 text-center">
+                                        {% if stats.student_count > 0 %}
+                                        <div class="flex flex-col items-center">
+                                            <span
+                                                class="font-bold {% if stats.pass_rate >= 80 %}text-green-600{% elif stats.pass_rate >= 50 %}text-secondary{% else %}text-red-500{% endif %}">
+                                                {{ stats.pass_rate }}%
+                                            </span>
+                                            <div class="w-16 h-1 bg-gray-100 rounded-full mt-1 overflow-hidden">
+                                                <div class="h-full {% if stats.pass_rate >= 80 %}bg-green-500{% elif stats.pass_rate >= 50 %}bg-blue-500{% else %}bg-red-500{% endif %}"
+                                                    style="width: {{ stats.pass_rate }}%;"></div>
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <span class="text-gray-400">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="p-4 text-center">
+                                        {% if stats.student_count > 0 %}
+                                        <span
+                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            Graded
+                                        </span>
+                                        {% else %}
+                                        <span
+                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                            Pending
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="p-4 text-center">
+                                        <div class="flex items-center justify-center">
+                                            <a href="/teacher/marks_preview/{{ subject.id }}"
+                                                class="text-xs font-bold text-secondary hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-6 py-2 rounded-lg transition-colors">
+                                                Manage Results
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
                 {% endif %}
@@ -295,60 +342,123 @@
                     </span>
                 </div>
 
+                <!-- Marks Processing Control Panel -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 mb-8 p-6">
+                    <h2 class="text-xl font-heading font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        Marks Processing Engine
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div>
+                            <h3 class="text-sm font-bold text-gray-700 uppercase mb-2 text-primary">1. Upload Internal Marks</h3>
+                            <p class="text-xs text-gray-500 mb-3">Upload your department internal marks for a selected subject.</p>
+                            <form action="/teacher/upload_internal" method="POST" enctype="multipart/form-data" class="space-y-3">
+                                <select name="subject_id" required class="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-primary focus:border-primary">
+                                    <option value="">-- Select Subject --</option>
+                                    {% for subject in subjects %}
+                                    <option value="{{ subject.id }}">{{ subject.name }} ({{ subject.code }}) - {{ subject.processing_status }}</option>
+                                    {% endfor %}
+                                </select>
+                                <input type="file" name="file" accept=".xlsx, .xls" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm text-sm w-full transition-transform transform hover:-translate-y-0.5">Upload Internal Marks</button>
+                            </form>
+                        </div>
+
+                        <div>
+                            <h3 class="text-sm font-bold text-gray-700 uppercase mb-2 text-emerald-600">2. Process & Merge Results</h3>
+                            <p class="text-xs text-gray-500 mb-3">Merge internal marks with external evaluations. This maps Unique IDs back to Roll Numbers and computes final grades.</p>
+                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 flex flex-col gap-3 justify-between">
+                                <select id="exec_subject_id" class="w-full bg-white border border-gray-300 text-gray-800 text-sm rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                                    <option value="">-- Select Subject to Process --</option>
+                                    {% for subject in subjects %}
+                                    <option value="{{ subject.id }}">{{ subject.name }} ({{ subject.processing_status }})</option>
+                                    {% endfor %}
+                                </select>
+                                
+                                <div class="flex gap-2">
+                                    <form method="POST" action="" id="processForm" class="flex-1" onsubmit="event.preventDefault(); var sid=document.getElementById('exec_subject_id').value; if(sid){ this.action='/teacher/process_results/'+sid; this.submit(); } else alert('Select a subject!');">
+                                        <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm text-sm w-full transition-transform transform hover:-translate-y-0.5 whitespace-nowrap">⚡ Merge Results</button>
+                                    </form>
+                                    
+                                    <button type="button" onclick="var sid=document.getElementById('exec_subject_id').value; if(sid) window.location.href='/teacher/export_subject_results/'+sid; else alert('Select subject');" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 font-bold py-2 px-3 rounded-lg text-sm transition-colors" title="Download Final Results">
+                                        ⬇️ Export
+                                    </button>
+                                    
+                                    <button type="button" onclick="var sid=document.getElementById('exec_subject_id').value; if(sid) window.location.href='/teacher/error_report/'+sid; else alert('Select subject');" class="bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 font-bold py-2 px-3 rounded-lg text-sm transition-colors" title="Download Error Report">
+                                        ⚠️ Errors
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ④ Subject cards grid -->
-                <div id="subjects" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div id="subjects" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {% for subject in subjects %}
+                    {% set stats = subject_stats[subject.id] %}
                     <div
-                        class="subject-card bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden relative group">
-
+                        class="subject-card bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative group transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
                         <!-- Accent top strip -->
-                        <div class="h-1.5 bg-gradient-to-r from-secondary to-blue-400"></div>
+                        <div class="h-2 bg-gradient-to-r from-primary via-secondary to-blue-400"></div>
 
-                        <div class="p-5">
+                        <div class="p-6">
                             <!-- Header row -->
                             <div class="flex justify-between items-start mb-4">
                                 <span
-                                    class="text-xs font-bold px-2.5 py-1 bg-blue-50 text-secondary rounded-lg border border-blue-100">
+                                    class="text-xs font-bold px-3 py-1 bg-blue-50 text-secondary rounded-full border border-blue-100">
                                     {{ subject.code }}
                                 </span>
                                 <span
-                                    class="flex items-center gap-1 text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-1 rounded-lg border border-amber-100">
-                                    ⭐ {{ subject.credits }} Credits
+                                    class="flex items-center gap-1.5 text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-100">
+                                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path
+                                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+                                        </path>
+                                    </svg>
+                                    {{ subject.credits }} CR
                                 </span>
                             </div>
 
                             <!-- Subject name -->
-                            <h3 class="text-lg font-bold text-gray-800 mb-1 leading-snug" title="{{ subject.name }}">
+                            <h3
+                                class="text-xl font-bold text-gray-800 mb-4 leading-tight group-hover:text-primary transition-colors">
                                 {{ subject.name }}
                             </h3>
 
-                            <!-- ④ Student count badge (if attribute exists) -->
-                            {% if subject.students is defined %}
-                            <p class="text-xs text-gray-400 mb-4">
-                                <svg class="w-3.5 h-3.5 inline mr-1 text-gray-400" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                                {{ subject.students }} Students
-                            </p>
-                            {% else %}
-                            <p class="mb-4"></p>
-                            {% endif %}
+                            <!-- Stats Row -->
+                            <div class="grid grid-cols-3 gap-2 mb-6">
+                                <div class="bg-gray-50 rounded-xl p-2.5 text-center border border-gray-50">
+                                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">Students
+                                    </p>
+                                    <p class="text-sm font-black text-gray-800">{{ stats.student_count }}</p>
+                                </div>
+                                <div class="bg-gray-50 rounded-xl p-2.5 text-center border border-gray-50">
+                                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">Avg Score
+                                    </p>
+                                    <p class="text-sm font-black text-primary">{{ stats.avg_total if stats.student_count
+                                        > 0 else '—' }}</p>
+                                </div>
+                                <div class="bg-gray-50 rounded-xl p-2.5 text-center border border-gray-50">
+                                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">Pass %</p>
+                                    <p class="text-sm font-black text-success">{{ stats.pass_rate if stats.student_count
+                                        > 0 else '—' }}%</p>
+                                </div>
+                            </div>
 
-                            <!-- Action -->
-                            <div class="flex items-center justify-between pt-3 border-t border-gray-50">
+                            <!-- Action Buttons -->
+                            <div class="flex flex-col gap-2">
                                 <a href="/teacher/marks_preview/{{ subject.id }}"
-                                    class="inline-flex items-center gap-2 bg-primary hover:bg-blue-900 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors group-hover:shadow-md">
-                                    View Students
-                                    <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform"
-                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    class="w-full flex items-center justify-center gap-2 bg-primary hover:bg-blue-900 text-white text-sm font-bold py-4 rounded-xl transition-all shadow-md hover:shadow-lg">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 5l7 7-7 7" />
+                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                     </svg>
+                                    Manage Results &amp; Marks
                                 </a>
-                                <span class="text-xs text-gray-400 font-medium">{{ loop.index }}/{{ subjects|length
-                                    }}</span>
                             </div>
                         </div>
                     </div>

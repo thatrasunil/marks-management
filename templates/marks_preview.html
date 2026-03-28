@@ -9,8 +9,8 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center">
                 <div class="flex items-center space-x-4">
-                    <a href="/teacher/enter_marks/{{ subject.id }}"
-                        class="text-blue-300 hover:text-white transition-colors" title="Back to Edit Marks">
+                    <a href="/teacher/dashboard#subjects"
+                        class="text-blue-300 hover:text-white transition-colors" title="Back to Dashboard">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -27,11 +27,45 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <span
-                        class="bg-yellow-500 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">Pending
-                        Admin Release</span>
+                    <!-- Subject Switcher -->
+                    <div class="relative group">
+                        <button
+                            class="bg-white/10 hover:bg-white/20 text-white text-sm font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-2 border border-white/10 group-hover:border-white/30">
+                            Switch Subject
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div
+                            class="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 hidden group-hover:block z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div class="px-4 py-2 border-b border-gray-50 mb-1">
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Your Subjects
+                                </p>
+                            </div>
+                            {% for s in subjects %}
+                            <a href="/teacher/marks_preview/{{ s.id }}"
+                                class="flex items-center justify-between px-4 py-2.5 hover:bg-blue-50 transition-colors {% if s.id == subject.id %} bg-blue-50/50 border-r-4 border-primary {% endif %}">
+                                <div class="flex flex-col">
+                                    <span
+                                        class="text-sm font-bold {% if s.id == subject.id %} text-primary {% else %} text-gray-700 {% endif %}">{{
+                                        s.name }}</span>
+                                    <span class="text-[10px] text-gray-400 font-medium">{{ s.code }}</span>
+                                </div>
+                                {% if s.id == subject.id %}
+                                <svg class="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                                {% endif %}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+
                     <a href="/teacher/dashboard#subjects"
-                        class="bg-white/10 hover:bg-white/20 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
+                        class="bg-white/10 hover:bg-white/20 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors border border-white/10">
                         ← Dashboard
                     </a>
                 </div>
@@ -99,15 +133,27 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                 <h2 class="font-bold text-gray-800 text-lg">Student Marks — {{ subject.name }}</h2>
-                <a href="/teacher/enter_marks/{{ subject.id }}"
-                    class="text-sm font-semibold text-secondary hover:text-blue-800 transition-colors flex items-center space-x-1">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.172-8.172z">
-                        </path>
-                    </svg>
-                    <span>Edit Marks</span>
-                </a>
+                <div class="flex items-center space-x-3">
+                    <a href="/teacher/export_subject_results/{{ subject.id }}"
+                        class="text-sm font-semibold text-emerald-600 hover:text-emerald-800 transition-colors flex items-center space-x-1"
+                        title="Download Results as Excel">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        <span>Export Excel</span>
+                    </a>
+                    <div class="h-4 w-px bg-gray-300"></div>
+                    <a href="/teacher/dashboard#subjects"
+                        class="text-sm font-semibold text-secondary hover:text-blue-800 transition-colors flex items-center space-x-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.172-8.172z">
+                            </path>
+                        </svg>
+                        <span>Edit Marks</span>
+                    </a>
+                </div>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse min-w-max">
@@ -132,9 +178,15 @@
                             <td class="p-4 text-center text-gray-400">{{ loop.index }}</td>
                             <td class="p-4 font-medium text-gray-700">{{ student.roll_no }}</td>
                             <td class="p-4 text-gray-600">{{ student.name }}</td>
-                            <td class="p-4 text-center font-medium">{{ mark.internal if mark else '—' }}</td>
-                            <td class="p-4 text-center font-medium">{{ mark.external if mark else '—' }}</td>
-                            <td class="p-4 text-center font-bold text-gray-800">{{ mark.total if mark else '—' }}</td>
+                            <td class="p-4 text-center font-medium">
+                                {{ "%.1f"|format(mark.internal)|replace('.0', '') if mark else '—' }}
+                            </td>
+                            <td class="p-4 text-center font-medium">
+                                {{ "%.1f"|format(mark.external)|replace('.0', '') if mark else '—' }}
+                            </td>
+                            <td class="p-4 text-center font-bold text-gray-800">
+                                {{ "%.1f"|format(mark.total)|replace('.0', '') if mark else '—' }}
+                            </td>
                             <td class="p-4 text-center">
                                 {% if mark %}
                                 <span class="inline-flex items-center justify-center px-3 py-1 text-xs font-bold rounded-full 
@@ -185,6 +237,14 @@
 
         <!-- Action Buttons -->
         <div class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a href="/teacher/export_subject_results/{{ subject.id }}"
+                class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center space-x-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                <span>Export to Excel</span>
+            </a>
             <a href="/teacher/dashboard#subjects"
                 class="bg-gray-700 hover:bg-gray-900 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center space-x-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

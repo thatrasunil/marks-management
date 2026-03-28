@@ -32,6 +32,7 @@ class Subject(db.Model):
     name = db.Column(db.String(100), nullable=False)
     credits = db.Column(db.Integer, nullable=False)
     teacher_id = db.Column(db.Integer, db.ForeignKey('teacher.id'), nullable=False)
+    processing_status = db.Column(db.String(20), default='NOT_PROCESSED') # NOT_PROCESSED, PROCESSING, COMPLETED
     marks = db.relationship('Mark', backref='subject', lazy=True)
 
 class Mark(db.Model):
@@ -52,3 +53,27 @@ class Result(db.Model):
     cgpa = db.Column(db.Float, nullable=False, default=0.0)
     semester = db.Column(db.Integer, nullable=False, default=1)
     is_released = db.Column(db.Boolean, default=False)
+
+class AnonymousMarkData(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
+    unique_id = db.Column(db.String(50), nullable=False)
+    marks_data = db.Column(db.Text, nullable=False) # JSON
+    external_total = db.Column(db.Float, nullable=False, default=0.0)
+    status = db.Column(db.String(20), default='VALID') # VALID or ERROR
+    upload_version = db.Column(db.Integer, default=1)
+
+    __table_args__ = (
+        db.UniqueConstraint('unique_id', 'subject_id', name='uq_anonymous_mark_subject_unique_id'),
+    )
+
+class StudentMapping(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
+    unique_id = db.Column(db.String(50), nullable=False)
+    roll_number = db.Column(db.String(20), db.ForeignKey('student.roll_no'), nullable=False)
+    upload_version = db.Column(db.Integer, default=1)
+
+    __table_args__ = (
+        db.UniqueConstraint('unique_id', 'subject_id', name='uq_student_mapping_subject_unique_id'),
+    )
