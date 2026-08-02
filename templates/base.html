@@ -8,6 +8,15 @@
     <!-- Prevent favicon 404 -->
     <link rel="icon" href="data:,">
     <!-- Tailwind CSS -->
+    <script>
+        (function() {
+            const originalWarn = console.warn;
+            console.warn = function(...args) {
+                if (args[0] && typeof args[0] === 'string' && args[0].includes('tailwindcss.com')) return;
+                originalWarn.apply(console, args);
+            };
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
     <link
@@ -59,37 +68,243 @@
     </main>
 
     <footer class="bg-primary text-white py-4 text-center text-sm font-light">
-        &copy; 2026 AITS Results. All rights reserved.
+        &copy; 2026 {{ settings.institution_name }}. All rights reserved.
     </footer>
+
+    <!-- Global Loading Spinner Overlay -->
+    <div id="global-loader" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-[9999] hidden flex items-center justify-center">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4">
+            <svg class="animate-spin h-10 w-10 text-secondary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-sm font-semibold text-gray-700" id="global-loader-text">Processing, please wait...</span>
+        </div>
+    </div>
+
+    <!-- Global Search Modal -->
+    <div id="global-search-modal" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-[9998] hidden flex items-center justify-center p-4">
+        <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl border border-gray-150 overflow-hidden transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[80vh]">
+            <!-- Search Input Header -->
+            <div class="p-4 border-b border-gray-150 flex items-center gap-3">
+                <svg class="w-6 h-6 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                <input type="text" id="global-search-input" placeholder="Search students, teachers, subjects... (Press Esc to close)" 
+                       class="w-full bg-transparent border-0 outline-none text-gray-800 placeholder-gray-400 text-lg font-sans focus:ring-0">
+                <button onclick="closeGlobalSearch()" class="text-gray-400 hover:text-gray-600 transition-colors text-sm font-semibold">Close</button>
+            </div>
+            
+            <!-- Search Results Area -->
+            <div class="flex-grow overflow-y-auto p-6 space-y-6" id="global-search-results">
+                <div class="text-center text-gray-400 py-8">
+                    <svg class="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <p class="font-medium">Type at least 2 characters to search...</p>
+                    <p class="text-xs mt-1">Press <kbd class="px-1.5 py-0.5 bg-gray-100 border border-gray-250 rounded text-gray-500 font-mono text-[10px]">Ctrl</kbd> + <kbd class="px-1.5 py-0.5 bg-gray-100 border border-gray-250 rounded text-gray-500 font-mono text-[10px]">K</kbd> to open search anywhere.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Global Toast Container -->
     <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+    
     <script>
+        // Loading Helpers
+        window.showLoading = function(message = 'Processing, please wait...') {
+            document.getElementById('global-loader-text').innerText = message;
+            const el = document.getElementById('global-loader');
+            el.classList.remove('hidden');
+            el.classList.add('flex');
+        };
+        window.hideLoading = function() {
+            const el = document.getElementById('global-loader');
+            el.classList.remove('flex');
+            el.classList.add('hidden');
+        };
+
+        // Toast Helpers
         window.showToast = function(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            // Tailwind classes for the toast
-            // pointer-events-auto allows clicking if we ever add a close button
-            toast.className = `px-5 py-3 rounded-lg shadow-xl text-white transform transition-all duration-300 translate-y-4 opacity-0 flex items-center gap-3 pointer-events-auto font-medium text-sm ${type === 'success' ? 'bg-success' : 'bg-error'}`;
+            toast.className = `px-5 py-3 rounded-lg shadow-xl text-white transform transition-all duration-300 translate-y-4 opacity-0 flex items-center gap-3 pointer-events-auto font-medium text-sm`;
             
-            const icon = type === 'success' 
-                ? '<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
-                : '<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+            // Apply theme classes based on type
+            let bgClass = 'bg-success';
+            let iconSvg = '<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
             
-            toast.innerHTML = `${icon} <span>${message}</span>`;
+            if (type === 'error') {
+                bgClass = 'bg-error';
+                iconSvg = '<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>';
+            } else if (type === 'warning') {
+                bgClass = 'bg-warning';
+                iconSvg = '<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>';
+            } else if (type === 'info') {
+                bgClass = 'bg-secondary';
+                iconSvg = '<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+            }
+            
+            toast.className += ` ${bgClass}`;
+            toast.innerHTML = `${iconSvg} <span>${message}</span>`;
             container.appendChild(toast);
             
-            // Trigger animation
             requestAnimationFrame(() => {
                 toast.classList.remove('translate-y-4', 'opacity-0');
             });
             
-            // Remove after 4 seconds
             setTimeout(() => {
                 toast.classList.add('opacity-0', 'translate-y-2');
                 setTimeout(() => toast.remove(), 300);
             }, 4000);
         };
+
+        // Global Search Dialog Management
+        function openGlobalSearch() {
+            const modal = document.getElementById('global-search-modal');
+            const box = modal.querySelector('div');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                box.classList.remove('scale-95', 'opacity-0');
+                box.classList.add('scale-100', 'opacity-100');
+                document.getElementById('global-search-input').focus();
+            }, 50);
+        }
+
+        function closeGlobalSearch() {
+            const modal = document.getElementById('global-search-modal');
+            const box = modal.querySelector('div');
+            box.classList.remove('scale-100', 'opacity-100');
+            box.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.remove('flex');
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // Global search input handling
+        let searchTimeout = null;
+        document.getElementById('global-search-input').addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            const q = e.target.value.trim();
+            const resultsContainer = document.getElementById('global-search-results');
+            
+            if (q.length < 2) {
+                resultsContainer.innerHTML = `
+                    <div class="text-center text-gray-400 py-8">
+                        <svg class="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        <p class="font-medium">Type at least 2 characters to search...</p>
+                    </div>`;
+                return;
+            }
+            
+            resultsContainer.innerHTML = `
+                <div class="flex items-center justify-center py-12">
+                    <svg class="animate-spin h-8 w-8 text-secondary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>`;
+                
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+                    const data = await res.json();
+                    
+                    let html = '';
+                    let hasResults = false;
+                    
+                    // Render Students
+                    if (data.students && data.students.length > 0) {
+                        hasResults = true;
+                        html += `
+                            <div>
+                                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Students</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    ${data.students.map(s => `
+                                        <div class="p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors border border-gray-200/50 flex items-center justify-between">
+                                            <div>
+                                                <p class="font-semibold text-gray-800 text-sm">${s.name}</p>
+                                                <p class="text-xs text-gray-500">Roll: ${s.roll_no} | Sem ${s.semester} | ${s.batch}</p>
+                                            </div>
+                                            <a href="/admin/dashboard#students" onclick="closeGlobalSearch(); if(window.switchTab) switchTab('students');" class="text-xs text-secondary hover:underline font-semibold shrink-0">View</a>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>`;
+                    }
+                    
+                    // Render Teachers
+                    if (data.teachers && data.teachers.length > 0) {
+                        hasResults = true;
+                        html += `
+                            <div>
+                                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Teachers</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    ${data.teachers.map(t => `
+                                        <div class="p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors border border-gray-200/50 flex items-center justify-between">
+                                            <div>
+                                                <p class="font-semibold text-gray-800 text-sm">${t.name}</p>
+                                                <p class="text-xs text-gray-500">${t.email}</p>
+                                            </div>
+                                            <a href="/admin/dashboard#faculties" onclick="closeGlobalSearch(); if(window.switchTab) switchTab('faculties');" class="text-xs text-secondary hover:underline font-semibold shrink-0">View</a>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>`;
+                    }
+                    
+                    // Render Subjects
+                    if (data.subjects && data.subjects.length > 0) {
+                        hasResults = true;
+                        html += `
+                            <div>
+                                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Subjects</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    ${data.subjects.map(s => `
+                                        <div class="p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors border border-gray-200/50 flex items-center justify-between">
+                                            <div>
+                                                <p class="font-semibold text-gray-800 text-sm">${s.name} (${s.code})</p>
+                                                <p class="text-xs text-gray-500">Credits: ${s.credits} | Status: <span class="uppercase font-bold">${s.status}</span></p>
+                                            </div>
+                                            <a href="/admin/dashboard#subjects" onclick="closeGlobalSearch(); if(window.switchTab) switchTab('subjects');" class="text-xs text-secondary hover:underline font-semibold shrink-0">View</a>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>`;
+                    }
+                    
+                    if (!hasResults) {
+                        html = `
+                            <div class="text-center text-gray-400 py-8">
+                                <svg class="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <p class="font-medium">No results found matching "${q}"</p>
+                            </div>`;
+                    }
+                    
+                    resultsContainer.innerHTML = html;
+                } catch (err) {
+                    resultsContainer.innerHTML = `<div class="text-center text-error py-8">Error performing search. Please try again.</div>`;
+                }
+            }, 300);
+        });
+
+        // Global hotkey Ctrl+K to trigger search modal
+        window.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                openGlobalSearch();
+            }
+            if (e.key === 'Escape') {
+                closeGlobalSearch();
+            }
+        });
     </script>
 </body>
 

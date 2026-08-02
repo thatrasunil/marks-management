@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Internal Server Error - AITS Results{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div class="max-w-md w-full text-center bg-white p-8 rounded-2xl shadow-xl border border-gray-100 transform hover:scale-105 transition-transform duration-300">
+        <div class="w-24 h-24 bg-red-50 text-error rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+        </div>
+        <h1 class="text-6xl font-heading font-bold text-error mb-2">500</h1>
+        <h2 class="text-2xl font-heading font-semibold text-gray-800 mb-4">Internal Server Error</h2>
+        <p class="text-gray-500 mb-8 leading-relaxed">
+            Oops! Something went wrong on our servers. Please try reloading the page, or contact system administration if the issue persists.
+        </p>
+        <div class="space-y-4">
+            <button onclick="window.location.reload()" class="block w-full py-3 px-4 bg-secondary hover:bg-blue-700 text-white rounded-xl font-medium shadow-lg hover:shadow-blue-500/20 transition-all duration-300">
+                Retry Action
+            </button>
+            <a href="/" class="block w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors duration-300">
+                Go to Homepage
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

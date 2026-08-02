@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabulation Register - Print View</title>
+    <!-- Tailwind CSS -->
+    <script>
+        (function() {
+            const originalWarn = console.warn;
+            console.warn = function(...args) {
+                if (args[0] && typeof args[0] === 'string' && args[0].includes('tailwindcss.com')) return;
+                originalWarn.apply(console, args);
+            };
+        })();
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 8mm;
+            }
+            body {
+                background: white !important;
+                color: black !important;
+                font-size: 9pt;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .page-break {
+                page-break-after: always;
+            }
+            .avoid-break {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-900 font-sans p-6 print:p-0">
+
+    <!-- Action Bar (Hidden on Print) -->
+    <div class="no-print max-w-7xl mx-auto mb-4 flex items-center justify-between bg-white p-4 rounded-xl shadow-md border border-slate-200">
+        <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+            <span class="font-bold text-slate-800 text-sm">Official Tabulation Register - Print Layout</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="window.print()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-lg shadow-md transition-colors flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                Print Now
+            </button>
+            <button onclick="window.close()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs rounded-lg transition-colors">
+                Close Window
+            </button>
+        </div>
+    </div>
+
+    <!-- Print Document Box -->
+    <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-300 print:shadow-none print:border-none print:p-0">
+        <!-- University Title Block -->
+        <div class="text-center border-b-2 border-slate-900 pb-3 mb-4">
+            <h1 class="text-xl font-bold uppercase tracking-wider text-slate-900">{{ tr_data.metadata.university_name }}</h1>
+            <h2 class="text-sm font-bold uppercase tracking-wide text-slate-700 mt-0.5">{{ tr_data.metadata.report_title }} - SEMESTER {{ tr_data.metadata.semester }} EXAMINATION</h2>
+            <div class="text-xs text-slate-600 font-medium mt-1">
+                Department: <span class="font-bold text-slate-900">{{ tr_data.metadata.department }}</span> | 
+                Branch: <span class="font-bold text-slate-900">{{ tr_data.metadata.branch }}</span> | 
+                Academic Year: <span class="font-bold text-slate-900">{{ tr_data.metadata.academic_year }}</span> | 
+                Batch: <span class="font-bold text-slate-900">{{ tr_data.metadata.batch }}</span>
+            </div>
+            <div class="text-[10px] text-slate-500 mt-0.5">
+                Generated Date: {{ tr_data.metadata.generated_date }} | Official Institutional Copy
+            </div>
+        </div>
+
+        <!-- Dynamic Data Table -->
+        <table class="w-full text-left border-collapse border border-slate-900 text-[10pt]">
+            <thead>
+                <!-- Grouped Headers -->
+                <tr class="bg-slate-200 text-slate-900 font-bold border-b border-slate-900">
+                    <th class="p-1.5 border border-slate-900 text-center w-8">S.No</th>
+                    <th class="p-1.5 border border-slate-900 w-28">Hall Ticket</th>
+                    <th class="p-1.5 border border-slate-900 w-44">Student Name</th>
+
+                    {% for sub in tr_data.subjects %}
+                    <th colspan="4" class="p-1 border border-slate-900 text-center bg-slate-100">
+                        <div class="font-bold text-xs">{{ sub.code }}</div>
+                        <div class="text-[8pt] font-normal text-slate-700 truncate max-w-[140px] mx-auto">{{ sub.name }}</div>
+                        <div class="text-[7.5pt] text-slate-500">({{ sub.credits }} C)</div>
+                    </th>
+                    {% endfor %}
+
+                    <th colspan="6" class="p-1 border border-slate-900 text-center bg-slate-200 font-bold">
+                        SEMESTER PERFORMANCE SUMMARY
+                    </th>
+                </tr>
+
+                <!-- Sub Headers -->
+                <tr class="bg-slate-100 text-slate-800 text-[8pt] font-bold text-center border-b border-slate-900">
+                    <th class="p-1 border border-slate-900"></th>
+                    <th class="p-1 border border-slate-900"></th>
+                    <th class="p-1 border border-slate-900"></th>
+
+                    {% for sub in tr_data.subjects %}
+                    <th class="p-1 border border-slate-900 text-right w-8">Int</th>
+                    <th class="p-1 border border-slate-900 text-right w-8">Ext</th>
+                    <th class="p-1 border border-slate-900 text-right w-9 font-bold">Tot</th>
+                    <th class="p-1 border border-slate-900 text-center w-7 font-bold">Grd</th>
+                    {% endfor %}
+
+                    <th class="p-1 border border-slate-900 w-10">Reg Cr</th>
+                    <th class="p-1 border border-slate-900 w-10">Earn Cr</th>
+                    <th class="p-1 border border-slate-900 text-right w-11 font-bold">SGPA</th>
+                    <th class="p-1 border border-slate-900 text-right w-11 font-bold">CGPA</th>
+                    <th class="p-1 border border-slate-900 text-right w-11 font-bold">%</th>
+                    <th class="p-1 border border-slate-900 text-center w-14 font-bold">Result</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for st in tr_data.students %}
+                <tr class="border-b border-slate-400 avoid-break {% if loop.index % 2 == 0 %}bg-slate-50{% endif %}">
+                    <td class="p-1 border border-slate-400 text-center font-medium text-slate-600">{{ loop.index }}</td>
+                    <td class="p-1 border border-slate-400 font-mono font-bold text-slate-900 text-[8.5pt]">{{ st.roll_no }}</td>
+                    <td class="p-1 border border-slate-400 font-medium text-slate-900 text-[8.5pt] truncate max-w-[160px]">{{ st.name }}</td>
+
+                    {% for sub_entry in st.subjects %}
+                    <td class="p-1 border border-slate-400 text-right font-mono text-[8pt] text-slate-700">{{ sub_entry.internal }}</td>
+                    <td class="p-1 border border-slate-400 text-right font-mono text-[8pt] text-slate-700">{{ sub_entry.external }}</td>
+                    <td class="p-1 border border-slate-400 text-right font-mono text-[8.5pt] font-bold text-slate-900">{{ sub_entry.total }}</td>
+                    <td class="p-1 border border-slate-400 text-center font-mono text-[8.5pt] font-bold {% if sub_entry.grade == 'F' %}text-red-700{% endif %}">{{ sub_entry.grade }}</td>
+                    {% endfor %}
+
+                    <td class="p-1 border border-slate-400 text-center font-mono text-[8pt] text-slate-700">{{ st.total_credits }}</td>
+                    <td class="p-1 border border-slate-400 text-center font-mono text-[8pt] font-bold text-slate-900">{{ st.credits_earned }}</td>
+                    <td class="p-1 border border-slate-400 text-right font-mono text-[8.5pt] font-bold text-slate-900">{{ "%.2f"|format(st.sgpa) }}</td>
+                    <td class="p-1 border border-slate-400 text-right font-mono text-[8.5pt] text-slate-700">{{ "%.2f"|format(st.cgpa) }}</td>
+                    <td class="p-1 border border-slate-400 text-right font-mono text-[8.5pt] font-bold text-slate-900">{{ st.percentage }}%</td>
+                    <td class="p-1 border border-slate-400 text-center font-bold text-[8pt]">
+                        {% if st.overall_result == 'PASS' %}
+                        <span class="text-emerald-700">PASS</span>
+                        {% else %}
+                        <span class="text-red-700">FAIL</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Summary Statistics Section -->
+        <div class="mt-4 border border-slate-900 p-3 rounded avoid-break bg-slate-50">
+            <h3 class="font-bold text-xs uppercase tracking-wider text-slate-900 mb-2 border-b border-slate-300 pb-1">Cohort Examination Summary Statistics</h3>
+            <div class="grid grid-cols-4 gap-x-6 gap-y-1 text-xs">
+                <div>Total Registered Students: <span class="font-bold">{{ tr_data.summary.total_students }}</span></div>
+                <div>Pass Percentage: <span class="font-bold text-emerald-700">{{ tr_data.summary.pass_percentage }}%</span></div>
+                <div>Highest SGPA: <span class="font-bold">{{ tr_data.summary.highest_sgpa }}</span></div>
+                <div>Highest Percentage: <span class="font-bold">{{ tr_data.summary.highest_percentage }}%</span></div>
+
+                <div>Students Appeared: <span class="font-bold">{{ tr_data.summary.appeared }}</span></div>
+                <div>Passed Students: <span class="font-bold text-emerald-700">{{ tr_data.summary.passed }}</span></div>
+                <div>Average SGPA: <span class="font-bold">{{ tr_data.summary.average_sgpa }}</span></div>
+                <div>Lowest Percentage: <span class="font-bold">{{ tr_data.summary.lowest_percentage }}%</span></div>
+
+                <div></div>
+                <div>Failed Students: <span class="font-bold text-red-700">{{ tr_data.summary.failed }}</span></div>
+                <div>Lowest SGPA: <span class="font-bold">{{ tr_data.summary.lowest_sgpa }}</span></div>
+                <div></div>
+            </div>
+        </div>
+
+        <!-- Institutional Signatures Footer -->
+        <div class="mt-12 pt-6 grid grid-cols-3 gap-8 text-center text-xs font-semibold text-slate-800 avoid-break">
+            <div>
+                <div class="border-t border-slate-900 pt-1">Prepared / Verified By</div>
+                <div class="text-[9pt] font-normal text-slate-500 mt-0.5">Verification Officer</div>
+            </div>
+            <div>
+                <div class="border-t border-slate-900 pt-1">Head of Department (HOD)</div>
+                <div class="text-[9pt] font-normal text-slate-500 mt-0.5">{{ tr_data.metadata.department }}</div>
+            </div>
+            <div>
+                <div class="border-t border-slate-900 pt-1">Controller of Examinations</div>
+                <div class="text-[9pt] font-normal text-slate-500 mt-0.5">Annamacharya Institute of Technology and Sciences, Tirupati</div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

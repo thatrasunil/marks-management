@@ -1,0 +1,313 @@
+{% extends 'base.html' %}
+{% block title %}Teacher Analytics Dashboard{% endblock %}
+
+{% block content %}
+<div class="flex h-screen bg-gray-50 overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-primary text-white hidden md:flex flex-col shadow-xl shrink-0">
+        <div class="p-6 border-b border-blue-900 flex items-center space-x-3">
+            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AITS Logo" class="h-10 w-10 rounded shadow-md bg-white">
+            <div>
+                <h2 class="text-xl font-heading font-bold tracking-wide leading-tight">AITS Results</h2>
+                <p class="text-blue-300 text-xs mt-0.5 truncate max-w-[140px]">{{ teacher.name }}</p>
+            </div>
+        </div>
+        <nav class="flex-grow p-4 space-y-2">
+            <a href="/teacher/dashboard" class="block py-3 px-4 hover:bg-blue-800 rounded-lg text-blue-200 transition-colors">Back to Dashboard</a>
+            <a href="#overview" class="block py-3 px-4 bg-blue-900 rounded-lg text-white font-medium">Overview & Stats</a>
+            <a href="#subjects" class="block py-3 px-4 hover:bg-blue-800 rounded-lg text-blue-200 transition-colors">Subject Metrics</a>
+        </nav>
+        <div class="p-4 border-t border-blue-900">
+            <a href="/teacher/logout" class="block py-2 px-4 text-center border border-blue-400 hover:bg-blue-800 rounded-lg text-white transition-colors">Logout</a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto p-8 relative">
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-heading font-bold text-gray-800">My Subject Analytics</h1>
+                <p class="text-gray-500 text-sm mt-1">Insights and metrics for your assigned subjects</p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <span class="text-xs text-gray-500 font-medium">Last Updated: <span id="last-updated" class="font-bold">-</span></span>
+                <button onclick="refreshData()" class="p-2.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 shadow-sm transition-colors text-gray-600 flex items-center gap-1 text-sm font-semibold">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.235"></path></svg>
+                    Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-gray-400 mb-4">Filter My Subjects</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Academic Year</label>
+                    <select id="filter-academic-year" onchange="refreshData()" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-sm">
+                        <option value="ALL">All Years</option>
+                        <option value="2024-2025">2024-2025</option>
+                        <option value="2025-2026">2025-2026</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Semester</label>
+                    <select id="filter-semester" onchange="refreshData()" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-sm">
+                        <option value="ALL">All Semesters</option>
+                        <option value="1">Semester 1</option>
+                        <option value="2">Semester 2</option>
+                        <option value="3">Semester 3</option>
+                        <option value="4">Semester 4</option>
+                        <option value="5">Semester 5</option>
+                        <option value="6">Semester 6</option>
+                        <option value="7">Semester 7</option>
+                        <option value="8">Semester 8</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Batch</label>
+                    <select id="filter-batch" onchange="refreshData()" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-sm">
+                        <option value="ALL">All Batches</option>
+                        <option value="2024 Intake">2024 Intake</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Result Status</label>
+                    <select id="filter-status" onchange="refreshData()" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-sm">
+                        <option value="ALL">All Statuses</option>
+                        <option value="DRAFT">DRAFT</option>
+                        <option value="SUBMITTED">SUBMITTED</option>
+                        <option value="APPROVED">APPROVED</option>
+                        <option value="RELEASED">RELEASED</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading overlay -->
+        <div id="loading-overlay" class="absolute inset-0 bg-gray-50/70 z-50 flex items-center justify-center hidden">
+            <div class="flex flex-col items-center gap-3">
+                <div class="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-sm font-semibold text-gray-600">Gathering statistics...</p>
+            </div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8" id="overview">
+            <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+                <span class="text-xs font-bold uppercase tracking-wider text-gray-400">Assigned Subjects</span>
+                <h2 class="text-3xl font-black text-gray-800 mt-2" id="card-assigned">0</h2>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+                <span class="text-xs font-bold uppercase tracking-wider text-gray-400">Processed Results</span>
+                <h2 class="text-3xl font-black text-blue-600 mt-2" id="card-processed">0</h2>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+                <span class="text-xs font-bold uppercase tracking-wider text-gray-400">Submitted Results</span>
+                <h2 class="text-3xl font-black text-green-600 mt-2" id="card-submitted">0</h2>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+                <span class="text-xs font-bold uppercase tracking-wider text-orange-600">Pending Uploads</span>
+                <h2 class="text-3xl font-black text-orange-600 mt-2" id="card-pending">0</h2>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm col-span-2 md:col-span-1">
+                <span class="text-xs font-bold uppercase tracking-wider text-gray-400">Pass Rate</span>
+                <h2 class="text-3xl font-black text-emerald-600 mt-2" id="card-pass-pct">0.0%</h2>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm col-span-2 md:col-span-1">
+                <span class="text-xs font-bold uppercase tracking-wider text-gray-400">Average Marks</span>
+                <h2 class="text-3xl font-black text-blue-600 mt-2" id="card-avg-marks">0.0</h2>
+            </div>
+        </div>
+
+        <!-- Subject Performance Chart & Table -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8" id="subjects">
+            <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                <h3 class="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wider">Subject-wise Average Marks</h3>
+                <div class="h-64">
+                    <canvas id="chart-sub-performance"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                <h3 class="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wider">Subject-wise Pass vs Fail Rate</h3>
+                <div class="h-64">
+                    <canvas id="chart-pass-fail-rate"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table detailing subject stats -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+            <h2 class="text-lg font-bold text-gray-800 mb-4">Subject Statistics Breakdowns</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm text-left">
+                    <thead class="bg-gray-50 text-gray-500 uppercase font-bold text-xs tracking-wider">
+                        <tr>
+                            <th class="px-6 py-3">Code</th>
+                            <th class="px-6 py-3">Subject Name</th>
+                            <th class="px-6 py-3 text-center">Appeared</th>
+                            <th class="px-6 py-3 text-center">Pass %</th>
+                            <th class="px-6 py-3 text-center">Fail %</th>
+                            <th class="px-6 py-3 text-center">Avg Marks</th>
+                        </tr>
+                    </thead>
+                    <tbody id="subject-list-body" class="divide-y divide-gray-100">
+                        <!-- Dynamic -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    let charts = {};
+
+    function getFilters() {
+        return {
+            semester: document.getElementById('filter-semester').value,
+            academic_year: document.getElementById('filter-academic-year').value,
+            batch: document.getElementById('filter-batch').value,
+            result_status: document.getElementById('filter-status').value
+        };
+    }
+
+    async function refreshData() {
+        document.getElementById('loading-overlay').classList.remove('hidden');
+        const filters = getFilters();
+        const queryParams = new URLSearchParams(filters).toString();
+        
+        try {
+            const res = await fetch(`/teacher/analytics/data?${queryParams}`);
+            const result = await res.json();
+            
+            if (result.success) {
+                updateOverview(result.data);
+                updateCharts(result.data.subject_performance);
+                updateTable(result.data.subject_performance);
+                document.getElementById('last-updated').innerText = new Date().toLocaleTimeString();
+            } else {
+                showToast("Failed to fetch analytics: " + result.message, "error");
+            }
+        } catch (e) {
+            console.error(e);
+            showToast("Network error while updating analytics.", "error");
+        } finally {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+    }
+
+    function updateOverview(data) {
+        document.getElementById('card-assigned').innerText = data.assigned_subjects;
+        document.getElementById('card-processed').innerText = data.processed_results;
+        document.getElementById('card-submitted').innerText = data.submitted_results;
+        document.getElementById('card-pending').innerText = data.pending_uploads;
+        document.getElementById('card-pass-pct').innerText = data.pass_percentage + "%";
+        document.getElementById('card-avg-marks').innerText = data.average_marks;
+    }
+
+    function destroyCharts() {
+        Object.keys(charts).forEach(key => {
+            if (charts[key]) charts[key].destroy();
+        });
+        charts = {};
+    }
+
+    function updateCharts(perfList) {
+        destroyCharts();
+        if (perfList.length === 0) return;
+
+        const labels = perfList.map(x => x.code);
+        const avgs = perfList.map(x => x.average_marks);
+        const passRates = perfList.map(x => x.pass_percentage);
+        const failRates = perfList.map(x => x.fail_percentage);
+
+        // 1. Avg Marks Chart
+        const ctxAvg = document.getElementById('chart-sub-performance').getContext('2d');
+        charts.avgMarks = new Chart(ctxAvg, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Average Marks',
+                    data: avgs,
+                    backgroundColor: '#2563EB',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, max: 100 },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // 2. Pass vs Fail Rate Stacked Chart
+        const ctxPF = document.getElementById('chart-pass-fail-rate').getContext('2d');
+        charts.passFail = new Chart(ctxPF, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Pass %',
+                        data: passRates,
+                        backgroundColor: '#10B981',
+                        borderRadius: 6
+                    },
+                    {
+                        label: 'Fail %',
+                        data: failRates,
+                        backgroundColor: '#EF4444',
+                        borderRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, max: 100, stacked: true },
+                    x: { stacked: true, grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    function updateTable(perfList) {
+        const body = document.getElementById('subject-list-body');
+        body.innerHTML = '';
+        if (perfList.length === 0) {
+            body.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-500 font-medium">No subjects found.</td></tr>';
+            return;
+        }
+
+        perfList.forEach(sub => {
+            body.innerHTML += `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 font-semibold text-primary">${sub.code}</td>
+                    <td class="px-6 py-4 font-medium text-gray-800">${sub.name}</td>
+                    <td class="px-6 py-4 text-center font-bold text-gray-700">${sub.appeared}</td>
+                    <td class="px-6 py-4 text-center font-bold text-green-600">${sub.pass_percentage}%</td>
+                    <td class="px-6 py-4 text-center font-bold text-red-600">${sub.fail_percentage}%</td>
+                    <td class="px-6 py-4 text-center font-bold text-blue-600">${sub.average_marks}</td>
+                </tr>
+            `;
+        });
+    }
+
+    // Init
+    window.addEventListener('DOMContentLoaded', () => {
+        refreshData();
+    });
+</script>
+{% endblock %}

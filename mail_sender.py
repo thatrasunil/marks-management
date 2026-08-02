@@ -12,22 +12,77 @@ def _send_in_background(app, mail, students_data):
     are no detached-session issues after the request context closes.
     """
     with app.app_context():
+        from models import db, NotificationLog
         sent, failed = 0, 0
+        
+        # Check if email is configured
+        username = app.config.get('MAIL_USERNAME')
+        password = app.config.get('MAIL_PASSWORD')
+        is_configured = True
+        if not username or username == 'yourmail@gmail.com' or not password or password == 'your_app_password':
+            is_configured = False
+
         for s in students_data:
+            subject_str = f"Semester {s['semester']} Result - Annamacharya Institute of Technology & Sciences, Tirupati"
+            
+            if not is_configured:
+                print(f"[MAIL] Unconfigured. Logging pending notification for {s['email']}")
+                try:
+                    log_entry = NotificationLog(
+                        student_id=s['student_id'],
+                        email=s['email'],
+                        subject=subject_str,
+                        status='PENDING',
+                        error_message='Email service not configured. Notification is pending.'
+                    )
+                    db.session.add(log_entry)
+                    db.session.commit()
+                except Exception as e_log:
+                    print(f"[MAIL] Failed to write pending log to DB: {e_log}")
+                    db.session.rollback()
+                continue
+
             html_body = _build_email_html(s)
             try:
                 msg = Message(
-                    subject=f"Semester {s['semester']} Result - Annamacharya Institute of Technology & Sciences, Tirupati",
+                    subject=subject_str,
                     recipients=[s['email']],
                     html=html_body,
                 )
                 mail.send(msg)
                 print(f"[MAIL] Sent successfully to {s['email']}")
                 sent += 1
+                
+                try:
+                    log_entry = NotificationLog(
+                        student_id=s['student_id'],
+                        email=s['email'],
+                        subject=subject_str,
+                        status='SENT'
+                    )
+                    db.session.add(log_entry)
+                    db.session.commit()
+                except Exception as e_log:
+                    print(f"[MAIL] Failed to write sent log to DB: {e_log}")
+                    db.session.rollback()
+
                 time.sleep(1)          # respect Gmail rate limits
             except Exception as e:
                 print(f"[MAIL] ERROR: Failed for {s['email']}: {e}")
                 failed += 1
+                try:
+                    log_entry = NotificationLog(
+                        student_id=s['student_id'],
+                        email=s['email'],
+                        subject=subject_str,
+                        status='FAILED',
+                        error_message=str(e)
+                    )
+                    db.session.add(log_entry)
+                    db.session.commit()
+                except Exception as e_log:
+                    print(f"[MAIL] Failed to write failure log to DB: {e_log}")
+                    db.session.rollback()
 
         print(f"[MAIL] SUMMARY: {sent} sent successfully, {failed} failed.")
 
@@ -48,8 +103,8 @@ def send_all_results_email(app, mail, students):
             skipped += 1
             continue
 
-        marks = student.marks
-        if not marks:
+        released_marks = [m for m in student.marks if m.status == 'RELEASED']
+        if not released_marks:
             skipped += 1
             continue
 
@@ -62,10 +117,11 @@ def send_all_results_email(app, mail, students):
                 'total': m.total,
                 'grade': m.grade,
             }
-            for m in marks
+            for m in released_marks
         ]
 
         students_data.append({
+            'student_id': student.id,
             'name': student.name,
             'email': student.email,
             'roll_no': student.roll_no,

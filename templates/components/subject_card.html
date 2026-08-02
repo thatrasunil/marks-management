@@ -1,0 +1,267 @@
+{% macro subject_card(data) %}
+{% set subject = data.subject %}
+{% set stats = data.stats %}
+{% set internal_uploaded = data.internal_uploaded %}
+{% set external_uploaded = data.external_uploaded %}
+{% set mapping_uploaded = data.mapping_uploaded %}
+{% set student_count = data.student_count %}
+{% set has_errors = data.has_errors %}
+
+<div class="subject-card bg-white rounded-2xl shadow-md border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col justify-between"
+     id="card_{{ subject.id }}"
+     data-subject-id="{{ subject.id }}"
+     data-internal-uploaded="{{ 'true' if internal_uploaded else 'false' }}"
+     data-external-uploaded="{{ 'true' if external_uploaded else 'false' }}"
+     data-mapping-uploaded="{{ 'true' if mapping_uploaded else 'false' }}">
+    <!-- Accent top strip -->
+    <div class="h-2 bg-gradient-to-r from-primary via-secondary to-blue-400"></div>
+
+    <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+        <!-- Header Row -->
+        <div class="flex justify-between items-center gap-2">
+            <span class="text-xs font-bold px-2.5 py-1 bg-blue-50 text-secondary rounded-full border border-blue-100">
+                {{ subject.code }}
+            </span>
+            <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100">
+                {{ subject.credits }} Credits
+            </span>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold 
+                {% if subject.processing_status == 'APPROVED' %}
+                    bg-green-100 text-green-800
+                {% elif subject.processing_status == 'SUBMITTED' %}
+                    bg-blue-100 text-blue-800
+                {% elif subject.processing_status == 'REJECTED' %}
+                    bg-red-100 text-red-800
+                {% elif subject.processing_status == 'DRAFT' %}
+                    bg-purple-100 text-purple-800
+                {% else %}
+                    bg-yellow-100 text-yellow-800
+                {% endif %}">
+                {{ subject.processing_status }}
+            </span>
+        </div>
+
+        <!-- Subject Name & Student count -->
+        <div>
+            <h3 class="text-lg font-bold text-gray-800 font-heading leading-tight group-hover:text-primary transition-colors">
+                {{ subject.name }}
+            </h3>
+            <p class="text-xs text-gray-500 mt-1">
+                Students: <span id="student_count_{{ subject.id }}" class="font-bold text-gray-700">{{ student_count if student_count is not none else '—' }}</span>
+            </p>
+            {% if subject.processing_status in ['SUBMITTED', 'APPROVED'] %}
+                {% set latest_sub = subject.latest_submission %}
+                {% if latest_sub %}
+                <p class="text-[10px] text-gray-500 mt-0.5">
+                    Submitted: <span class="font-semibold text-gray-700">{{ latest_sub.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                </p>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        {% if subject.processing_status == 'REJECTED' %}
+            {% set latest_sub = subject.latest_submission %}
+            <div class="bg-red-50 border border-red-200 text-red-700 text-xs p-3 rounded-lg space-y-1">
+                <strong class="font-bold flex items-center gap-1 text-red-800">
+                    ⚠️ Admin Feedback:
+                </strong>
+                <div><span class="font-semibold text-red-800">Reason:</span> {{ latest_sub.rejection_reason if latest_sub and latest_sub.rejection_reason else subject.rejection_reason or 'No reason provided.' }}</div>
+                {% if latest_sub and latest_sub.comments %}
+                <div class="font-light text-red-700 bg-white/50 border border-red-100 rounded p-1.5 mt-1 leading-snug">
+                    <span class="font-bold">Comments:</span> {{ latest_sub.comments }}
+                </div>
+                {% endif %}
+                <div class="text-[9px] text-red-500 font-semibold mt-1">Rejected by {{ latest_sub.rejected_by if latest_sub else 'Admin' }} on {{ latest_sub.rejection_timestamp.strftime('%Y-%m-%d %H:%M:%S') if latest_sub and latest_sub.rejection_timestamp else '—' }}</div>
+            </div>
+        {% endif %}
+
+        <!-- Three Upload Rows (Compact & Elegant) -->
+        <div class="space-y-2.5 py-1 border-t border-b border-gray-100">
+            <!-- Internal Marks Row -->
+            <div class="flex items-center justify-between py-1 gap-2">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-gray-700">Internal Marks</span>
+                    <span id="status_badge_internal_{{ subject.id }}" class="text-[10px] font-bold {% if internal_uploaded %}text-green-600 bg-green-50{% else %}text-gray-500 bg-gray-100{% endif %} px-1.5 py-0.5 rounded">
+                        {% if internal_uploaded %}UPLOADED{% else %}NOT UPLOADED{% endif %}
+                    </span>
+                </div>
+                
+                {% if not (subject.processing_status in ['SUBMITTED', 'APPROVED']) %}
+                <form class="flex items-center gap-1" enctype="multipart/form-data" onsubmit="handleAjaxUpload(event, '/teacher/upload_internal')">
+                    <input type="hidden" name="subject_id" value="{{ subject.id }}">
+                    <input type="file" id="file_internal_{{ subject.id }}" name="file" accept=".xlsx" class="hidden" 
+                           onchange="document.getElementById('btn_internal_{{ subject.id }}').classList.remove('hidden'); document.getElementById('lbl_internal_{{ subject.id }}').innerText = this.files[0].name.substring(0,10) + '...';">
+                    <label for="file_internal_{{ subject.id }}" class="cursor-pointer bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-semibold px-2 py-1 rounded border border-blue-200 transition-colors whitespace-nowrap">
+                        Select
+                    </label>
+                    <span id="lbl_internal_{{ subject.id }}" class="text-[10px] text-gray-500 truncate max-w-[60px]"></span>
+                    <button type="submit" id="btn_internal_{{ subject.id }}" class="hidden bg-success hover:bg-green-600 text-white text-[11px] font-bold px-2 py-1 rounded shadow-sm">
+                        Upload
+                    </button>
+                </form>
+                {% else %}
+                <span class="text-[10px] text-gray-400 italic">Locked</span>
+                {% endif %}
+            </div>
+
+            <!-- External Marks Row -->
+            <div class="flex items-center justify-between py-1 gap-2">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-gray-700">External Marks</span>
+                    <span id="status_badge_external_{{ subject.id }}" class="text-[10px] font-bold {% if external_uploaded %}text-green-600 bg-green-50{% else %}text-gray-500 bg-gray-100{% endif %} px-1.5 py-0.5 rounded">
+                        {% if external_uploaded %}UPLOADED{% else %}NOT UPLOADED{% endif %}
+                    </span>
+                </div>
+                
+                {% if not (subject.processing_status in ['SUBMITTED', 'APPROVED']) %}
+                <form class="flex items-center gap-1" enctype="multipart/form-data" onsubmit="handleAjaxUpload(event, '/teacher/upload_external')">
+                    <input type="hidden" name="subject_id" value="{{ subject.id }}">
+                    <input type="file" id="file_external_{{ subject.id }}" name="file" accept=".xlsx" class="hidden" 
+                           onchange="document.getElementById('btn_external_{{ subject.id }}').classList.remove('hidden'); document.getElementById('lbl_external_{{ subject.id }}').innerText = this.files[0].name.substring(0,10) + '...';">
+                    <label for="file_external_{{ subject.id }}" class="cursor-pointer bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-semibold px-2 py-1 rounded border border-blue-200 transition-colors whitespace-nowrap">
+                        Select
+                    </label>
+                    <span id="lbl_external_{{ subject.id }}" class="text-[10px] text-gray-500 truncate max-w-[60px]"></span>
+                    <button type="submit" id="btn_external_{{ subject.id }}" class="hidden bg-success hover:bg-green-600 text-white text-[11px] font-bold px-2 py-1 rounded shadow-sm">
+                        Upload
+                    </button>
+                </form>
+                {% else %}
+                <span class="text-[10px] text-gray-400 italic">Locked</span>
+                {% endif %}
+            </div>
+
+            <!-- UID Mapping Row -->
+            <div class="flex items-center justify-between py-1 gap-2">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-gray-700">Mapping Sheet</span>
+                    <span id="status_badge_mapping_{{ subject.id }}" class="text-[10px] font-bold {% if mapping_uploaded %}text-green-600 bg-green-50{% else %}text-gray-500 bg-gray-100{% endif %} px-1.5 py-0.5 rounded">
+                        {% if mapping_uploaded %}UPLOADED{% else %}NOT UPLOADED{% endif %}
+                    </span>
+                </div>
+                
+                {% if not (subject.processing_status in ['SUBMITTED', 'APPROVED']) %}
+                <form class="flex items-center gap-1" enctype="multipart/form-data" onsubmit="handleAjaxUpload(event, '/teacher/upload_mapping')">
+                    <input type="hidden" name="subject_id" value="{{ subject.id }}">
+                    <input type="file" id="file_mapping_{{ subject.id }}" name="file" accept=".xlsx" class="hidden" 
+                           onchange="document.getElementById('btn_mapping_{{ subject.id }}').classList.remove('hidden'); document.getElementById('lbl_mapping_{{ subject.id }}').innerText = this.files[0].name.substring(0,10) + '...';">
+                    <label for="file_mapping_{{ subject.id }}" class="cursor-pointer bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-semibold px-2 py-1 rounded border border-blue-200 transition-colors whitespace-nowrap">
+                        Select
+                    </label>
+                    <span id="lbl_mapping_{{ subject.id }}" class="text-[10px] text-gray-500 truncate max-w-[60px]"></span>
+                    <button type="submit" id="btn_mapping_{{ subject.id }}" class="hidden bg-success hover:bg-green-600 text-white text-[11px] font-bold px-2 py-1 rounded shadow-sm">
+                        Upload
+                    </button>
+                </form>
+                {% else %}
+                <span class="text-[10px] text-gray-400 italic">Locked</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="p-3 bg-gray-50 border border-gray-100 rounded-xl space-y-1 text-xs font-semibold">
+            <div class="flex justify-between items-center" id="summary_row_internal_{{ subject.id }}">
+                <span class="text-gray-500 font-medium">Internal:</span>
+                {% if internal_uploaded %}
+                    <span class="text-green-600 font-bold">✓ Uploaded</span>
+                {% else %}
+                    <span class="text-red-500 font-bold">✗ Missing</span>
+                {% endif %}
+            </div>
+            <div class="flex justify-between items-center" id="summary_row_external_{{ subject.id }}">
+                <span class="text-gray-500 font-medium">External:</span>
+                {% if external_uploaded %}
+                    <span class="text-green-600 font-bold">✓ Uploaded</span>
+                {% else %}
+                    <span class="text-red-500 font-bold">✗ Missing</span>
+                {% endif %}
+            </div>
+            <div class="flex justify-between items-center" id="summary_row_mapping_{{ subject.id }}">
+                <span class="text-gray-500 font-medium">Mapping:</span>
+                {% if mapping_uploaded %}
+                    <span class="text-green-600 font-bold">✓ Uploaded</span>
+                {% else %}
+                    <span class="text-red-500 font-bold">✗ Missing</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Action Footer -->
+        <div class="space-y-2 pt-1">
+            {% set all_uploaded = internal_uploaded and external_uploaded and mapping_uploaded %}
+            
+            <div id="missing_banner_{{ subject.id }}" class="{% if all_uploaded %}hidden{% endif %} text-center text-xs font-bold text-red-600 bg-red-50 border border-red-100 py-1.5 rounded-lg">
+                ⚠️ Missing Required Files
+            </div>
+
+            {% if subject.processing_status == 'REJECTED' %}
+                <!-- Rejected and Locked View options -->
+                <div class="flex flex-col gap-2">
+                    <div class="flex gap-2">
+                        <button onclick="unlockSubject('{{ subject.id }}')"
+                                class="flex-1 flex items-center justify-center gap-1 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold py-2.5 rounded-lg shadow-sm transition-transform hover:-translate-y-0.5">
+                            🔓 Unlock Editing
+                        </button>
+                        <button onclick="openHistoryModal('{{ subject.id }}', '{{ subject.name }} ({{ subject.code }})')"
+                                class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold py-2.5 rounded-lg transition-colors border border-gray-200">
+                            📜 View History
+                        </button>
+                    </div>
+                    <a href="/teacher/marks_preview/{{ subject.id }}"
+                       class="w-full flex items-center justify-center gap-1.5 bg-blue-50 hover:bg-blue-100 text-primary hover:text-blue-900 text-xs font-bold py-2 rounded-lg border border-blue-200 transition-colors">
+                        👁️ View Current Marks
+                    </a>
+                </div>
+            {% elif subject.processing_status in ['SUBMITTED', 'APPROVED'] %}
+                <!-- Locked View options -->
+                <div class="flex gap-2">
+                    <a href="/teacher/marks_preview/{{ subject.id }}"
+                       class="flex-1 flex items-center justify-center gap-1.5 bg-blue-50 hover:bg-blue-100 text-primary hover:text-blue-900 text-xs font-bold py-2.5 rounded-lg border border-blue-200 transition-colors">
+                        👁️ View Results
+                    </a>
+                    <button onclick="exportResults('{{ subject.id }}')"
+                            class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold py-2.5 rounded-lg transition-colors border border-gray-200">
+                        ⬇️ Export Excel
+                    </button>
+                </div>
+            {% else %}
+                <!-- Normal view: Process or Submit -->
+                <div class="flex flex-col gap-2">
+                    <button onclick="processResults('{{ subject.id }}')" id="btn_process_{{ subject.id }}"
+                            {% if not all_uploaded %}disabled class="w-full bg-gray-100 text-gray-400 text-sm font-bold py-2.5 rounded-xl cursor-not-allowed border border-gray-200"
+                            {% else %}class="w-full bg-gray-800 hover:bg-black text-white text-sm font-bold py-2.5 rounded-xl shadow transition-transform hover:-translate-y-0.5"
+                            {% endif %}>
+                        ⚡ Process Results
+                    </button>
+                    
+                    {% if subject.processing_status == 'DRAFT' %}
+                        <div class="grid grid-cols-3 gap-1.5 mt-0.5">
+                            <a href="/teacher/marks_preview/{{ subject.id }}"
+                               class="flex items-center justify-center bg-blue-50 hover:bg-blue-100 text-primary text-xs font-bold py-2 rounded-md border border-blue-200 transition-colors text-center animate-pulse">
+                                📝 Manage
+                            </a>
+                            <button onclick="exportResults('{{ subject.id }}')"
+                                    class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold py-2 rounded-md transition-colors border border-gray-200">
+                                ⬇️ Preview
+                            </button>
+                            <button onclick="submitToAdmin('{{ subject.id }}')"
+                                    class="bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 rounded-md transition-colors shadow-sm">
+                                🚀 Submit
+                            </button>
+                        </div>
+                        
+                        <!-- Show Error Report button if errors exist in session for this subject -->
+                        {% if has_errors %}
+                        <button onclick="downloadErrors('{{ subject.id }}')"
+                                class="w-full mt-1 border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 font-bold rounded-lg text-xs py-2 transition-colors">
+                            ⚠️ Download Errors
+                        </button>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endmacro %}

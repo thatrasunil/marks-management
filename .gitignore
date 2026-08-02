@@ -19,3 +19,5 @@ cookies.txt
 .vscode/
 .idea/
 *.log
+
+results/

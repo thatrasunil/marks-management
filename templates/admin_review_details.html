@@ -1,0 +1,453 @@
+{% extends 'base.html' %}
+{% block title %}Review Results - {{ subject.name }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 pb-12">
+
+    <!-- Header -->
+    <header class="bg-primary text-white sticky top-0 z-20 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-4">
+                    <a href="/admin/dashboard#review" class="text-blue-300 hover:text-white transition-colors" title="Back to Dashboard">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                    </a>
+                    <div class="flex items-center space-x-3">
+                        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AITS Logo" class="h-8 w-8 rounded shadow-sm bg-white">
+                        <div>
+                            <h1 class="text-xl font-heading font-bold leading-tight">Review Results — {{ subject.name }}</h1>
+                            <p class="text-xs text-blue-300">{{ subject.code }} • {{ subject.credits }} Credits</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <span class="px-3 py-1 text-xs font-bold rounded-lg uppercase
+                        {% if subject.processing_status == 'APPROVED' %} bg-green-100 text-green-800 border border-green-200
+                        {% elif subject.processing_status == 'SUBMITTED' %} bg-blue-100 text-blue-800 border border-blue-200
+                        {% elif subject.processing_status == 'REJECTED' %} bg-red-100 text-red-800 border border-red-200
+                        {% else %} bg-purple-100 text-purple-800 border border-purple-200 {% endif %}">
+                        Status: {{ subject.processing_status }}
+                    </span>
+                    <a href="/admin/dashboard#review" class="bg-white/10 hover:bg-white/20 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors border border-white/10">
+                        ← Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+
+        <!-- Top Action Bar (Only shows when status is SUBMITTED) -->
+        {% if subject.processing_status == 'SUBMITTED' %}
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+                <h3 class="font-bold text-blue-900 text-base">Results Submitted & Pending Review</h3>
+                <p class="text-xs text-blue-700 mt-1">Review the marks, validation report, and class stats below. You can approve to release or reject with feedback.</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="openApproveModal()" class="px-6 py-2.5 bg-success hover:bg-green-600 text-white font-bold rounded-xl shadow-md transition-transform hover:-translate-y-0.5 text-sm flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Approve
+                </button>
+                <button onclick="openRejectModal()" class="px-6 py-2.5 bg-error hover:bg-red-600 text-white font-bold rounded-xl shadow-md transition-transform hover:-translate-y-0.5 text-sm flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Reject
+                </button>
+            </div>
+        </div>
+        {% elif subject.processing_status == 'APPROVED' %}
+        <div class="bg-green-50 border border-green-200 rounded-xl p-5 mb-6 flex items-start space-x-3">
+            <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div>
+                <p class="font-bold text-green-800">Results Approved & Locked</p>
+                <p class="text-green-700 text-sm mt-0.5">Approved by <strong>{{ subject.latest_submission.approved_by }}</strong> on <strong>{{ subject.latest_submission.approval_timestamp.strftime('%Y-%m-%d %H:%M:%S') if subject.latest_submission and subject.latest_submission.approval_timestamp else '—' }}</strong>. These results are locked and ready for release.</p>
+            </div>
+        </div>
+        {% elif subject.processing_status == 'REJECTED' %}
+        <div class="bg-red-50 border border-red-200 rounded-xl p-5 mb-6 flex items-start space-x-3">
+            <svg class="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div>
+                <p class="font-bold text-red-800">Results Rejected</p>
+                <p class="text-red-700 text-sm mt-0.5">Rejected by <strong>{{ subject.latest_submission.rejected_by }}</strong> on <strong>{{ subject.latest_submission.rejection_timestamp.strftime('%Y-%m-%d %H:%M:%S') if subject.latest_submission and subject.latest_submission.rejection_timestamp else '—' }}</strong>.</p>
+                <p class="text-xs text-red-600 mt-1 font-semibold">Feedback: {{ subject.rejection_reason }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Stat Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Pass/Fail Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Pass/Fail Summary</h3>
+                <div class="flex justify-between items-end">
+                    <div>
+                        <div class="text-3xl font-black text-gray-800">{{ total_students }}</div>
+                        <div class="text-xs text-gray-400 font-bold mt-1">Total Graded Students</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xl font-bold text-green-600">{{ passed_students }} Pass</div>
+                        <div class="text-sm font-semibold text-red-500 mt-0.5">{{ failed_students }} Fail</div>
+                        <div class="text-xs font-black text-secondary mt-1">Pass Rate: {{ pass_rate }}%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Class Performance</h3>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="border-r border-gray-100">
+                        <div class="text-xl font-black text-primary">{{ avg_total }}</div>
+                        <div class="text-[10px] text-gray-400 font-bold uppercase mt-1">Average</div>
+                    </div>
+                    <div class="border-r border-gray-100">
+                        <div class="text-xl font-black text-green-600">{{ highest_marks }}</div>
+                        <div class="text-[10px] text-gray-400 font-bold uppercase mt-1">Highest</div>
+                    </div>
+                    <div>
+                        <div class="text-xl font-black text-red-500">{{ lowest_marks }}</div>
+                        <div class="text-[10px] text-gray-400 font-bold uppercase mt-1">Lowest</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Processing Details Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Processing Details</h3>
+                <div class="space-y-1.5 text-xs text-gray-600">
+                    <div class="flex justify-between"><span class="font-medium">Faculty Teacher:</span> <span class="font-bold text-gray-800">{{ subject.teacher.name }}</span></div>
+                    <div class="flex justify-between"><span class="font-medium">Academic Year:</span> <span class="font-bold text-gray-800">{{ subject.latest_submission.academic_year if subject.latest_submission else '—' }}</span></div>
+                    <div class="flex justify-between"><span class="font-medium">Batch / Semester:</span> <span class="font-bold text-gray-800">{{ subject.latest_submission.batch if subject.latest_submission else '—' }} / Sem {{ subject.latest_submission.semester if subject.latest_submission else '—' }}</span></div>
+                    <div class="flex justify-between"><span class="font-medium">Submission Time:</span> <span class="font-bold text-gray-800">{{ subject.latest_submission.timestamp.strftime('%Y-%m-%d %H:%M:%S') if subject.latest_submission else '—' }}</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Split Layout: Marks Table vs Logs -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Side: Table (2 columns wide on large screen) -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="p-5 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                        <h2 class="font-bold text-gray-800 text-base">Student Marks Details</h2>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-max">
+                            <thead>
+                                <tr class="bg-white text-xs uppercase tracking-wider text-gray-500 font-semibold border-b">
+                                    <th class="p-4 text-center w-12">#</th>
+                                    <th class="p-4">Roll No.</th>
+                                    <th class="p-4">Student Name</th>
+                                    <th class="p-4 text-center">Internal (30)</th>
+                                    <th class="p-4 text-center">External (70)</th>
+                                    <th class="p-4 text-center">Total</th>
+                                    <th class="p-4 text-center">Grade</th>
+                                    <th class="p-4 text-center">SGPA</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 text-sm">
+                                {% for row in preview_data %}
+                                {% set mark = row.mark %}
+                                {% set student = row.student %}
+                                <tr class="hover:bg-blue-50/30 transition-colors">
+                                    <td class="p-4 text-center text-gray-400">{{ loop.index }}</td>
+                                    <td class="p-4 font-medium text-gray-700">{{ student.roll_no }}</td>
+                                    <td class="p-4 text-gray-600">{{ student.name }}</td>
+                                    <td class="p-4 text-center font-medium">{{ "%.1f"|format(mark.internal)|replace('.0', '') if mark else '—' }}</td>
+                                    <td class="p-4 text-center font-medium">{{ "%.1f"|format(mark.external)|replace('.0', '') if mark else '—' }}</td>
+                                    <td class="p-4 text-center font-bold text-gray-800">{{ "%.1f"|format(mark.total)|replace('.0', '') if mark else '—' }}</td>
+                                    <td class="p-4 text-center">
+                                        {% if mark %}
+                                        <span class="inline-flex items-center justify-center px-3 py-1 text-xs font-bold rounded-full 
+                                            {% if mark.grade in ['O', 'A+', 'A'] %} bg-green-100 text-green-800
+                                            {% elif mark.grade in ['B+', 'B'] %} bg-blue-100 text-blue-800
+                                            {% elif mark.grade == 'C' %} bg-orange-100 text-orange-800
+                                            {% else %} bg-red-100 text-red-800 {% endif %}">
+                                            {{ mark.grade }}
+                                        </span>
+                                        {% else %}
+                                        <span class="text-gray-400">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="p-4 text-center font-bold text-gray-700">
+                                        {{ "%.2f"|format(row.sgpa) if row.sgpa is not none else '—' }}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="8" class="p-10 text-center text-gray-400">No student marks have been found for this subject.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: logs, histories -->
+            <div class="space-y-6">
+                <!-- Validation report logs -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="font-bold text-gray-800 text-sm mb-4 flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Validation Summary
+                    </h3>
+                    <div class="space-y-3 max-h-60 overflow-y-auto pr-1">
+                        {% for log in validation_logs %}
+                        <div class="p-2.5 rounded-lg border text-xs {% if log.level == 'ERROR' %} bg-red-50/50 border-red-100 text-red-700 {% elif log.level == 'WARNING' %} bg-amber-50/50 border-amber-100 text-amber-700 {% else %} bg-gray-50 border-gray-100 text-gray-600 {% endif %}">
+                            <div class="flex justify-between font-bold mb-1">
+                                <span>{{ log.stage }}</span>
+                                <span class="text-[9px] opacity-75">{{ log.timestamp.strftime('%H:%M:%S') }}</span>
+                            </div>
+                            <p class="leading-relaxed">{{ log.message }}</p>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-6 text-xs text-gray-400 italic">No processing validation logs available.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Workflow history log -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="font-bold text-gray-800 text-sm mb-4 flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Workflow Audit History
+                    </h3>
+                    <div class="relative border-l border-gray-200 pl-4 ml-2 space-y-5 max-h-72 overflow-y-auto pr-1">
+                        {% for hist in audit_history %}
+                        <div class="relative">
+                            <!-- Bullet -->
+                            <div class="absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full bg-blue-600 border border-white"></div>
+                            
+                            <div class="text-xs">
+                                <div class="flex justify-between font-bold text-gray-700">
+                                    <span>{{ hist.previous_status }} → {{ hist.new_status }}</span>
+                                    <span class="text-[9px] text-gray-400 font-medium">{{ hist.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+                                </div>
+                                <div class="text-[10px] text-gray-400 font-semibold mt-0.5">By: {{ hist.submitted_by }}</div>
+                                {% if hist.comments %}
+                                <div class="mt-1 bg-gray-50 border border-gray-100 rounded p-1.5 text-gray-500 font-light leading-snug">
+                                    {{ hist.comments }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-6 text-xs text-gray-400 italic">No workflow history recorded.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- ========================================== -->
+<!-- APPROVE MODAL -->
+<!-- ========================================== -->
+<div id="approveModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform scale-95 transition-transform duration-300">
+        <div class="p-6 text-center">
+            <div class="w-14 h-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <h3 class="text-xl font-heading font-bold text-gray-800">Approve Results?</h3>
+            <p class="text-sm text-gray-500 mt-2">These results will become officially approved and locked.</p>
+        </div>
+        <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+            <button onclick="closeModal('approveModal')" id="approve-cancel-btn" class="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-100 transition-colors text-xs">
+                Cancel
+            </button>
+            <button onclick="executeApprove()" id="approve-confirm-btn" class="px-5 py-2.5 rounded-xl bg-success text-white font-bold hover:bg-green-600 transition-colors text-xs shadow-md">
+                Confirm Approval
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- REJECT MODAL -->
+<!-- ========================================== -->
+<div id="rejectModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform scale-95 transition-transform duration-300">
+        <div class="p-6">
+            <div class="flex items-center gap-3 border-b border-gray-100 pb-4 mb-4">
+                <div class="w-10 h-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-heading font-bold text-gray-800">Reject Results?</h3>
+                    <p class="text-xs text-gray-400 font-semibold mt-0.5">A rejection reason is required.</p>
+                </div>
+            </div>
+
+            <!-- Form fields -->
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Rejection Reason *</label>
+                    <select id="reject-reason" class="w-full bg-gray-50 border border-gray-200 text-gray-800 text-xs rounded-xl focus:ring-2 focus:ring-primary block p-3 outline-none">
+                        <option value="">-- Select Reason --</option>
+                        <option value="Incorrect marks">Incorrect marks</option>
+                        <option value="Missing students">Missing students</option>
+                        <option value="Incorrect mapping">Incorrect mapping</option>
+                        <option value="Validation issue">Validation issue</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Custom Rejection Comments</label>
+                    <textarea id="reject-comments" placeholder="Describe the corrections needed..." rows="4" class="w-full bg-gray-50 border border-gray-200 text-gray-800 text-xs rounded-xl focus:ring-2 focus:ring-primary p-3 outline-none resize-none"></textarea>
+                    <p class="text-[10px] text-gray-400 mt-1 font-medium">Comments are mandatory if 'Other' is selected.</p>
+                </div>
+            </div>
+        </div>
+        <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+            <button onclick="closeModal('rejectModal')" id="reject-cancel-btn" class="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-100 transition-colors text-xs">
+                Cancel
+            </button>
+            <button onclick="executeReject()" id="reject-confirm-btn" class="px-5 py-2.5 rounded-xl bg-error text-white font-bold hover:bg-red-600 transition-colors text-xs shadow-md">
+                Confirm Rejection
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const subjectId = {{ subject.id }};
+
+    function openApproveModal() {
+        const m = document.getElementById('approveModal');
+        m.classList.remove('hidden');
+        setTimeout(() => {
+            m.classList.remove('opacity-0');
+            m.querySelector('.transform').classList.remove('scale-95');
+        }, 10);
+    }
+
+    function openRejectModal() {
+        // Reset fields
+        document.getElementById('reject-reason').value = "";
+        document.getElementById('reject-comments').value = "";
+        
+        const m = document.getElementById('rejectModal');
+        m.classList.remove('hidden');
+        setTimeout(() => {
+            m.classList.remove('opacity-0');
+            m.querySelector('.transform').classList.remove('scale-95');
+        }, 10);
+    }
+
+    function closeModal(id) {
+        const m = document.getElementById(id);
+        m.classList.add('opacity-0');
+        m.querySelector('.transform').classList.add('scale-95');
+        setTimeout(() => {
+            m.classList.add('hidden');
+        }, 300);
+    }
+
+    async function executeApprove() {
+        const cancelBtn = document.getElementById('approve-cancel-btn');
+        const confirmBtn = document.getElementById('approve-confirm-btn');
+        
+        // Disable buttons
+        cancelBtn.disabled = true;
+        confirmBtn.disabled = true;
+        confirmBtn.innerText = "Approving...";
+
+        try {
+            const res = await fetch(`/admin/approve_subject/${subjectId}`, {
+                method: 'POST'
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                showToast(data.message || 'Approval failed.', 'error');
+                cancelBtn.disabled = false;
+                confirmBtn.disabled = false;
+                confirmBtn.innerText = "Confirm Approval";
+            }
+        } catch (e) {
+            showToast('Network error, please try again.', 'error');
+            cancelBtn.disabled = false;
+            confirmBtn.disabled = false;
+            confirmBtn.innerText = "Confirm Approval";
+        }
+    }
+
+    async function executeReject() {
+        const reason = document.getElementById('reject-reason').value.trim();
+        const comments = document.getElementById('reject-comments').value.trim();
+
+        if (!reason) {
+            showToast('Please select a rejection reason.', 'error');
+            return;
+        }
+
+        if (reason === 'Other' && !comments) {
+            showToast('Please enter rejection comments.', 'error');
+            return;
+        }
+
+        const cancelBtn = document.getElementById('reject-cancel-btn');
+        const confirmBtn = document.getElementById('reject-confirm-btn');
+        
+        // Disable buttons
+        cancelBtn.disabled = true;
+        confirmBtn.disabled = true;
+        confirmBtn.innerText = "Rejecting...";
+
+        try {
+            const formData = new FormData();
+            formData.append('reason', reason);
+            formData.append('comments', comments);
+
+            const res = await fetch(`/admin/reject_subject/${subjectId}`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                showToast(data.message || 'Rejection failed.', 'error');
+                cancelBtn.disabled = false;
+                confirmBtn.disabled = false;
+                confirmBtn.innerText = "Confirm Rejection";
+            }
+        } catch (e) {
+            showToast('Network error, please try again.', 'error');
+            cancelBtn.disabled = false;
+            confirmBtn.disabled = false;
+            confirmBtn.innerText = "Confirm Rejection";
+        }
+    }
+</script>
+{% endblock %}

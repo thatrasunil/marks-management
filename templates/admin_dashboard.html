@@ -13,14 +13,43 @@
             </div>
         </div>
         <nav class="flex-grow p-4 space-y-2">
+            <div class="mb-4">
+                <button onclick="openGlobalSearch()" class="w-full py-2.5 px-3.5 bg-blue-950/40 text-blue-200 hover:bg-blue-950/80 hover:text-white rounded-lg flex items-center justify-between transition-colors border border-blue-900/50 text-sm shadow-inner">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        Search...
+                    </span>
+                    <span class="text-[10px] bg-blue-900/70 text-blue-300 px-1.5 py-0.5 rounded font-mono">Ctrl+K</span>
+                </button>
+            </div>
             <a href="#dashboard" id="nav-dashboard" onclick="switchTab('dashboard')"
                 class="block py-3 px-4 bg-blue-900 rounded-lg text-white font-medium">Dashboard</a>
+            <a href="#review" id="nav-review" onclick="switchTab('review')"
+                class="block py-3 px-4 hover:bg-blue-800 rounded-lg text-blue-200 transition-colors">Admin Review</a>
             <a href="#students" id="nav-students" onclick="switchTab('students')"
                 class="block py-3 px-4 hover:bg-blue-800 rounded-lg text-blue-200 transition-colors">Students</a>
             <a href="#faculties" id="nav-faculties" onclick="switchTab('faculties')"
                 class="block py-3 px-4 hover:bg-blue-800 rounded-lg text-blue-200 transition-colors">Faculties</a>
             <a href="#subjects" id="nav-subjects" onclick="switchTab('subjects')"
                 class="block py-3 px-4 hover:bg-blue-800 rounded-lg text-blue-200 transition-colors">Subjects</a>
+            <a href="#release" id="nav-release" onclick="switchTab('release')"
+                class="block py-3 px-4 hover:bg-blue-800 rounded-lg text-blue-200 transition-colors">Result Release</a>
+            <a href="#activity" id="nav-activity" onclick="switchTab('activity')"
+                class="block py-3 px-4 hover:bg-blue-800 rounded-lg text-blue-200 transition-colors">Activity Log</a>
+            <a href="#settings" id="nav-settings" onclick="switchTab('settings')"
+                class="block py-3 px-4 hover:bg-blue-800 rounded-lg text-blue-200 transition-colors">System Settings</a>
+            <a href="/admin/analytics" id="nav-analytics"
+                class="block py-3 px-4 hover:bg-blue-800 rounded-lg text-blue-200 transition-colors flex items-center justify-between shadow-sm">
+                <span>Analytics Dashboard</span>
+                <span class="text-[10px] bg-blue-900 text-blue-200 px-1.5 py-0.5 rounded font-bold uppercase">Analytics</span>
+            </a>
+            <a href="{{ url_for('tabulation_register') }}" id="nav-tr"
+                class="block py-3 px-4 bg-emerald-700 hover:bg-emerald-600 rounded-lg text-white font-medium transition-colors flex items-center justify-between shadow-sm">
+                <span>Tabulation Register</span>
+                <span class="text-[10px] bg-emerald-900 text-emerald-200 px-1.5 py-0.5 rounded font-bold uppercase">TR</span>
+            </a>
         </nav>
         <div class="p-4 border-t border-blue-900">
             <a href="/admin/logout"
@@ -86,6 +115,71 @@
                         <p class="text-gray-500 text-sm">Subjects</p>
                         <p class="text-2xl font-bold text-gray-800">{{ subjects|length }}</p>
                     </div>
+                </div>
+            </div>
+
+            <!-- Workflow Status Cards (Goal 8) -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+                <!-- Draft Card -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition-shadow">
+                    <div class="flex items-center justify-between text-purple-600">
+                        <span class="text-xs font-bold uppercase tracking-wider">Draft</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.172-8.172z"></path>
+                        </svg>
+                    </div>
+                    <p class="text-3xl font-black text-gray-800 mt-2" id="stat-draft">
+                        {{ subjects | selectattr('processing_status', 'eq', 'DRAFT') | list | length }}
+                    </p>
+                </div>
+                <!-- Submitted Card -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition-shadow">
+                    <div class="flex items-center justify-between text-blue-600">
+                        <span class="text-xs font-bold uppercase tracking-wider">Submitted</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                    </div>
+                    <p class="text-3xl font-black text-gray-800 mt-2" id="stat-submitted">
+                        {{ subjects | selectattr('processing_status', 'eq', 'SUBMITTED') | list | length }}
+                    </p>
+                </div>
+                <!-- Approved Card -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition-shadow">
+                    <div class="flex items-center justify-between text-green-600">
+                        <span class="text-xs font-bold uppercase tracking-wider">Approved</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <p class="text-3xl font-black text-gray-800 mt-2" id="stat-approved">
+                        {{ subjects | selectattr('processing_status', 'eq', 'APPROVED') | list | length }}
+                    </p>
+                </div>
+                <!-- Rejected Card -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition-shadow">
+                    <div class="flex items-center justify-between text-red-500">
+                        <span class="text-xs font-bold uppercase tracking-wider">Rejected</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <p class="text-3xl font-black text-gray-800 mt-2" id="stat-rejected">
+                        {{ subjects | selectattr('processing_status', 'eq', 'REJECTED') | list | length }}
+                    </p>
+                </div>
+                <!-- Pending Review Card -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition-shadow">
+                    <div class="flex items-center justify-between text-orange-500">
+                        <span class="text-xs font-bold uppercase tracking-wider">Pending Review</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                    </div>
+                    <p class="text-3xl font-black text-gray-800 mt-2" id="stat-pending-review">
+                        {{ subjects | selectattr('processing_status', 'eq', 'SUBMITTED') | list | length }}
+                    </p>
                 </div>
             </div>
 
@@ -158,15 +252,17 @@
                     <!-- Step 2: Release -->
                     <form action="/admin/release_results" method="POST" id="releaseForm">
                         <input type="hidden" name="batch" id="release_batch_hidden">
-                        <button type="submit"
-                            class="bg-primary hover:bg-gray-800 text-white font-bold py-3 px-7 rounded-xl shadow-md transition-transform transform hover:-translate-y-0.5 hover:shadow-lg flex items-center gap-2 whitespace-nowrap"
-                            onclick="return syncAndConfirm()">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                            </svg>
-                            2. Publish to Students
-                        </button>
+                        <input type="hidden" name="semester" id="release_semester_hidden">
+                    </form>
+                    <button type="button" id="mainReleaseBtn"
+                        class="bg-primary hover:bg-gray-800 text-white font-bold py-3 px-7 rounded-xl shadow-md transition-transform transform hover:-translate-y-0.5 hover:shadow-lg flex items-center gap-2 whitespace-nowrap"
+                        onclick="openReleaseModal(null)">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                        </svg>
+                        2. Publish to Students
+                    </button>
                 </div>
             </div>
 
@@ -765,6 +861,600 @@
                 </form>
             </div>
         </div>
+        <!-- Admin Review Tab (Goal 1) -->
+        <div id="tab-review" class="hidden relative">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mb-8">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-100 pb-5 mb-6 gap-4">
+                    <div>
+                        <h2 class="text-2xl font-heading font-bold text-gray-800">Admin Review Dashboard</h2>
+                        <p class="text-gray-500 text-sm mt-1">Review, approve, or reject result submissions from teachers.</p>
+                    </div>
+                    <!-- Internal Sub-Tab Switcher -->
+                    <div class="flex bg-gray-100 p-1 rounded-xl text-xs font-bold text-gray-600 shrink-0">
+                        <button onclick="switchReviewSubTab('pending')" id="subtab-btn-pending" class="px-4 py-2 bg-white text-gray-800 rounded-lg shadow-sm">Pending Review</button>
+                        <button onclick="switchReviewSubTab('submitted')" id="subtab-btn-submitted" class="px-4 py-2 rounded-lg hover:text-gray-800">Submitted</button>
+                        <button onclick="switchReviewSubTab('approved')" id="subtab-btn-approved" class="px-4 py-2 rounded-lg hover:text-gray-800">Approved</button>
+                        <button onclick="switchReviewSubTab('rejected')" id="subtab-btn-rejected" class="px-4 py-2 rounded-lg hover:text-gray-800">Rejected</button>
+                    </div>
+                </div>
+
+                <!-- Sub-tab sheets -->
+                
+                <!-- 1. PENDING REVIEW SHEET -->
+                <div id="review-sheet-pending" class="block overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 text-xs uppercase tracking-wider text-gray-500 font-semibold border-b border-t border-gray-100">
+                                <th class="p-4">Subject</th>
+                                <th class="p-4">Teacher</th>
+                                <th class="p-4 text-center">Semester / Batch</th>
+                                <th class="p-4 text-center">Submission Time</th>
+                                <th class="p-4 text-center">Student Count</th>
+                                <th class="p-4 text-center">Summary</th>
+                                <th class="p-4 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50 text-sm">
+                            {% set count_pending = namespace(val=0) %}
+                            {% for sub in submissions %}
+                                {% if sub.workflow_status == 'SUBMITTED' %}
+                                {% set count_pending.val = count_pending.val + 1 %}
+                                <tr class="hover:bg-blue-50/30 transition-colors" id="review-row-{{ sub.subject_id }}">
+                                    <td class="p-4">
+                                        <div class="font-bold text-gray-800">{{ sub.subject.name }}</div>
+                                        <div class="text-xs text-blue-600 font-semibold">{{ sub.subject.code }}</div>
+                                    </td>
+                                    <td class="p-4 text-gray-600 font-medium">{{ sub.submitted_by }}</td>
+                                    <td class="p-4 text-center text-gray-600">Sem {{ sub.semester }} • {{ sub.batch }}</td>
+                                    <td class="p-4 text-center text-gray-500 text-xs">{{ sub.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                    <td class="p-4 text-center font-bold text-gray-700">{{ sub.student_count }}</td>
+                                    <td class="p-4 text-center text-xs text-gray-500 font-semibold">{{ sub.processing_summary }}</td>
+                                    <td class="p-4 text-center">
+                                        <div class="flex items-center justify-center gap-2">
+                                            <a href="/admin/review_results/{{ sub.subject_id }}" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs shadow-sm transition-transform hover:-translate-y-0.5">Review</a>
+                                            <button data-subject-id="{{ sub.subject_id }}" onclick="approveSubject(this.dataset.subjectId)" class="px-3 py-1.5 bg-success hover:bg-green-600 text-white font-bold rounded-lg text-xs shadow-sm transition-transform hover:-translate-y-0.5">Approve</button>
+                                            <button data-subject-id="{{ sub.subject_id }}" onclick="rejectSubject(this.dataset.subjectId)" class="px-3 py-1.5 bg-error hover:bg-red-600 text-white font-bold rounded-lg text-xs shadow-sm transition-transform hover:-translate-y-0.5">Reject</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                            {% if count_pending.val == 0 %}
+                            <tr>
+                                <td colspan="7" class="p-8 text-center text-gray-500 italic">No submissions are pending review.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 2. SUBMITTED SHEET -->
+                <div id="review-sheet-submitted" class="hidden overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 text-xs uppercase tracking-wider text-gray-500 font-semibold border-b border-t border-gray-100">
+                                <th class="p-4">Subject</th>
+                                <th class="p-4">Teacher</th>
+                                <th class="p-4 text-center">Semester / Batch</th>
+                                <th class="p-4 text-center">Submission Time</th>
+                                <th class="p-4 text-center">Status</th>
+                                <th class="p-4 text-center">Student Count</th>
+                                <th class="p-4 text-center">Summary</th>
+                                <th class="p-4 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50 text-sm">
+                            {% set count_submitted = namespace(val=0) %}
+                            {% for sub in submissions %}
+                                {% if sub.workflow_status == 'SUBMITTED' %}
+                                {% set count_submitted.val = count_submitted.val + 1 %}
+                                <tr class="hover:bg-blue-50/30 transition-colors">
+                                    <td class="p-4">
+                                        <div class="font-bold text-gray-800">{{ sub.subject.name }}</div>
+                                        <div class="text-xs text-blue-600 font-semibold">{{ sub.subject.code }}</div>
+                                    </td>
+                                    <td class="p-4 text-gray-600 font-medium">{{ sub.submitted_by }}</td>
+                                    <td class="p-4 text-center text-gray-600">Sem {{ sub.semester }} • {{ sub.batch }}</td>
+                                    <td class="p-4 text-center text-gray-500 text-xs">{{ sub.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                    <td class="p-4 text-center">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">Pending Review</span>
+                                    </td>
+                                    <td class="p-4 text-center font-bold text-gray-700">{{ sub.student_count }}</td>
+                                    <td class="p-4 text-center text-xs text-gray-500 font-semibold">{{ sub.processing_summary }}</td>
+                                    <td class="p-4 text-center">
+                                        <a href="/admin/review_results/{{ sub.subject_id }}" class="inline-block px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs shadow-sm transition-transform hover:-translate-y-0.5">Review</a>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                            {% if count_submitted.val == 0 %}
+                            <tr>
+                                <td colspan="8" class="p-8 text-center text-gray-500 italic">No submitted results found.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 3. APPROVED SHEET -->
+                <div id="review-sheet-approved" class="hidden overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 text-xs uppercase tracking-wider text-gray-500 font-semibold border-b border-t border-gray-100">
+                                <th class="p-4">Subject</th>
+                                <th class="p-4">Teacher</th>
+                                <th class="p-4 text-center">Semester / Batch</th>
+                                <th class="p-4 text-center">Approved By</th>
+                                <th class="p-4 text-center">Approval Time</th>
+                                <th class="p-4 text-center">Student Count</th>
+                                <th class="p-4 text-center">Summary</th>
+                                <th class="p-4 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50 text-sm">
+                            {% set count_approved = namespace(val=0) %}
+                            {% for sub in submissions %}
+                                {% if sub.workflow_status == 'APPROVED' %}
+                                {% set count_approved.val = count_approved.val + 1 %}
+                                <tr class="hover:bg-blue-50/30 transition-colors">
+                                    <td class="p-4">
+                                        <div class="font-bold text-gray-800">{{ sub.subject.name }}</div>
+                                        <div class="text-xs text-blue-600 font-semibold">{{ sub.subject.code }}</div>
+                                    </td>
+                                    <td class="p-4 text-gray-600 font-medium">{{ sub.submitted_by }}</td>
+                                    <td class="p-4 text-center text-gray-600">Sem {{ sub.semester }} • {{ sub.batch }}</td>
+                                    <td class="p-4 text-center text-gray-600 font-semibold">{{ sub.approved_by }}</td>
+                                    <td class="p-4 text-center text-gray-500 text-xs">{{ sub.approval_timestamp.strftime('%Y-%m-%d %H:%M:%S') if sub.approval_timestamp else '—' }}</td>
+                                    <td class="p-4 text-center font-bold text-gray-700">{{ sub.student_count }}</td>
+                                    <td class="p-4 text-center text-xs text-gray-500 font-semibold">{{ sub.processing_summary }}</td>
+                                    <td class="p-4 text-center">
+                                        <a href="/admin/review_results/{{ sub.subject_id }}" class="inline-block px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs shadow-sm transition-transform hover:-translate-y-0.5">View Results</a>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                            {% if count_approved.val == 0 %}
+                            <tr>
+                                <td colspan="8" class="p-8 text-center text-gray-500 italic">No approved results found.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 4. REJECTED SHEET -->
+                <div id="review-sheet-rejected" class="hidden overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 text-xs uppercase tracking-wider text-gray-500 font-semibold border-b border-t border-gray-100">
+                                <th class="p-4">Subject</th>
+                                <th class="p-4">Teacher</th>
+                                <th class="p-4 text-center">Semester / Batch</th>
+                                <th class="p-4 text-center">Rejection Reason</th>
+                                <th class="p-4 text-center font-semibold">Rejected By</th>
+                                <th class="p-4 text-center">Rejection Time</th>
+                                <th class="p-4 text-center">Student Count</th>
+                                <th class="p-4 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50 text-sm">
+                            {% set count_rejected = namespace(val=0) %}
+                            {% for sub in submissions %}
+                                {% if sub.workflow_status == 'REJECTED' %}
+                                {% set count_rejected.val = count_rejected.val + 1 %}
+                                <tr class="hover:bg-blue-50/30 transition-colors">
+                                    <td class="p-4">
+                                        <div class="font-bold text-gray-800">{{ sub.subject.name }}</div>
+                                        <div class="text-xs text-blue-600 font-semibold">{{ sub.subject.code }}</div>
+                                    </td>
+                                    <td class="p-4 text-gray-600 font-medium">{{ sub.submitted_by }}</td>
+                                    <td class="p-4 text-center text-gray-600">Sem {{ sub.semester }} • {{ sub.batch }}</td>
+                                    <td class="p-4 text-center text-xs text-red-600 font-bold truncate max-w-[150px]" title="{{ sub.rejection_reason }} - {{ sub.comments }}">
+                                        {{ sub.rejection_reason }}
+                                    </td>
+                                    <td class="p-4 text-center text-gray-600 font-semibold">{{ sub.rejected_by }}</td>
+                                    <td class="p-4 text-center text-gray-500 text-xs">{{ sub.rejection_timestamp.strftime('%Y-%m-%d %H:%M:%S') if sub.rejection_timestamp else '—' }}</td>
+                                    <td class="p-4 text-center font-bold text-gray-700">{{ sub.student_count }}</td>
+                                    <td class="p-4 text-center">
+                                        <a href="/admin/review_results/{{ sub.subject_id }}" class="inline-block px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs shadow-sm transition-transform hover:-translate-y-0.5">View Details</a>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                            {% if count_rejected.val == 0 %}
+                            <tr>
+                                <td colspan="8" class="p-8 text-center text-gray-500 italic">No rejected results found.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Result Release Tab -->
+        <div id="tab-release" class="hidden relative">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mb-8">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-100 pb-5 mb-6 gap-4">
+                    <div>
+                        <h2 class="text-2xl font-heading font-bold text-gray-800">Result Release Dashboard</h2>
+                        <p class="text-gray-500 text-sm mt-1">Officially release approved examination results to students.</p>
+                    </div>
+                    <!-- Internal Sub-Tab Switcher -->
+                    <div class="flex bg-gray-100 p-1 rounded-xl text-xs font-bold text-gray-600 shrink-0">
+                        <button onclick="switchReleaseSubTab('pending-release')" id="releasesubtab-btn-pending-release" class="px-4 py-2 bg-white text-gray-800 rounded-lg shadow-sm">Pending Release</button>
+                        <button onclick="switchReleaseSubTab('released-results')" id="releasesubtab-btn-released-results" class="px-4 py-2 rounded-lg hover:text-gray-800">Released Results</button>
+                        <button onclick="switchReleaseSubTab('release-history')" id="releasesubtab-btn-release-history" class="px-4 py-2 rounded-lg hover:text-gray-800">Release History</button>
+                    </div>
+                </div>
+
+                <!-- Sub-tab sheets -->
+                
+                <!-- 1. PENDING RELEASE SHEET -->
+                <div id="release-sheet-pending-release" class="block overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 text-xs uppercase tracking-wider text-gray-500 font-semibold border-b border-t border-gray-100">
+                                <th class="p-4">Subject</th>
+                                <th class="p-4">Teacher</th>
+                                <th class="p-4 text-center">Semester / Batch</th>
+                                <th class="p-4 text-center">Approved By</th>
+                                <th class="p-4 text-center">Approval Time</th>
+                                <th class="p-4 text-center font-semibold">Student Count</th>
+                                <th class="p-4 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50 text-sm">
+                            {% set count_pending = namespace(val=0) %}
+                            {% for sub in submissions %}
+                                {% if sub.workflow_status == 'APPROVED' and sub.subject.processing_status == 'APPROVED' %}
+                                {% set count_pending.val = count_pending.val + 1 %}
+                                <tr class="hover:bg-blue-50/30 transition-colors" id="release-row-{{ sub.subject_id }}">
+                                    <td class="p-4">
+                                        <div class="font-bold text-gray-800">{{ sub.subject.name }}</div>
+                                        <div class="text-xs text-blue-600 font-semibold">{{ sub.subject.code }}</div>
+                                    </td>
+                                    <td class="p-4 text-gray-600 font-medium">{{ sub.submitted_by }}</td>
+                                    <td class="p-4 text-center text-gray-600">Sem {{ sub.semester }} • {{ sub.batch }}</td>
+                                    <td class="p-4 text-center text-gray-600 font-semibold">{{ sub.approved_by }}</td>
+                                    <td class="p-4 text-center text-gray-500 text-xs">{{ sub.approval_timestamp.strftime('%Y-%m-%d %H:%M:%S') if sub.approval_timestamp else '—' }}</td>
+                                    <td class="p-4 text-center font-bold text-gray-700">{{ sub.student_count }}</td>
+                                    <td class="p-4 text-center">
+                                        <button data-subject-id="{{ sub.subject_id }}" onclick="openReleaseModal(this.dataset.subjectId)" class="px-3.5 py-2 bg-primary hover:bg-gray-800 text-white font-bold rounded-lg text-xs shadow-sm transition-transform hover:-translate-y-0.5">
+                                            Release Results
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                            {% if count_pending.val == 0 %}
+                            <tr>
+                                <td colspan="7" class="p-8 text-center text-gray-500 italic">No approved results are pending release.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 2. RELEASED RESULTS SHEET -->
+                <div id="release-sheet-released-results" class="hidden overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 text-xs uppercase tracking-wider text-gray-500 font-semibold border-b border-t border-gray-100">
+                                <th class="p-4">Subject</th>
+                                <th class="p-4">Teacher</th>
+                                <th class="p-4 text-center">Semester / Batch</th>
+                                <th class="p-4 text-center">Released By</th>
+                                <th class="p-4 text-center">Release Time</th>
+                                <th class="p-4 text-center">Student Count</th>
+                                <th class="p-4 text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50 text-sm">
+                            {% set count_released = namespace(val=0) %}
+                            {% for sub in submissions %}
+                                {% if sub.workflow_status == 'RELEASED' or sub.subject.processing_status == 'RELEASED' %}
+                                {% set count_released.val = count_released.val + 1 %}
+                                <tr class="hover:bg-blue-50/30 transition-colors">
+                                    <td class="p-4">
+                                        <div class="font-bold text-gray-800">{{ sub.subject.name }}</div>
+                                        <div class="text-xs text-blue-600 font-semibold">{{ sub.subject.code }}</div>
+                                    </td>
+                                    <td class="p-4 text-gray-600 font-medium">{{ sub.submitted_by }}</td>
+                                    <td class="p-4 text-center text-gray-600">Sem {{ sub.semester }} • {{ sub.batch }}</td>
+                                    <td class="p-4 text-center text-gray-600 font-semibold">
+                                        {% if sub.subject.releases %}
+                                            {{ sub.subject.releases[-1].released_by }}
+                                        {% else %}
+                                            Admin
+                                        {% endif %}
+                                    </td>
+                                    <td class="p-4 text-center text-gray-500 text-xs">
+                                        {% if sub.subject.releases %}
+                                            {{ sub.subject.releases[-1].timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+                                        {% else %}
+                                            —
+                                        {% endif %}
+                                    </td>
+                                    <td class="p-4 text-center font-bold text-gray-700">{{ sub.student_count }}</td>
+                                    <td class="p-4 text-center">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-800">Released</span>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                            {% if count_released.val == 0 %}
+                            <tr>
+                                <td colspan="7" class="p-8 text-center text-gray-500 italic">No released results found.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 3. RELEASE HISTORY SHEET -->
+                <div id="release-sheet-release-history" class="hidden overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 text-xs uppercase tracking-wider text-gray-500 font-semibold border-b border-t border-gray-100">
+                                <th class="p-4">Release Time</th>
+                                <th class="p-4">Released By</th>
+                                <th class="p-4">Subject</th>
+                                <th class="p-4 text-center">Semester</th>
+                                <th class="p-4 text-center">Batch</th>
+                                <th class="p-4 text-center">Department</th>
+                                <th class="p-4 text-center">Academic Year</th>
+                                <th class="p-4 text-center">Version</th>
+                                <th class="p-4 text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50 text-sm">
+                            {% for rel in releases %}
+                            <tr class="hover:bg-blue-50/30 transition-colors">
+                                <td class="p-4 text-gray-500 text-xs">{{ rel.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                <td class="p-4 text-gray-600 font-semibold">{{ rel.released_by }}</td>
+                                <td class="p-4">
+                                    <div class="font-bold text-gray-800">{{ rel.subject.name }}</div>
+                                    <div class="text-xs text-blue-600 font-semibold">{{ rel.subject.code }}</div>
+                                </td>
+                                <td class="p-4 text-center text-gray-600 font-bold">Sem {{ rel.semester }}</td>
+                                <td class="p-4 text-center text-gray-600">{{ rel.batch }}</td>
+                                <td class="p-4 text-center text-gray-600">{{ rel.department }}</td>
+                                <td class="p-4 text-center text-gray-600 text-xs">{{ rel.academic_year }}</td>
+                                <td class="p-4 text-center font-bold text-gray-700">v{{ rel.release_version }}</td>
+                                <td class="p-4 text-center">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-800">{{ rel.workflow_status }}</span>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="9" class="p-8 text-center text-gray-500 italic">No release logs available in history.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Activity Log Tab -->
+        <div id="tab-activity" class="hidden">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold font-heading text-gray-800">Recent System Activity</h2>
+                    <button onclick="loadActivityLog()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg text-sm transition-colors flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89l-4.21 4.2"></path>
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 border-b border-gray-155 text-xs font-bold uppercase tracking-wider text-gray-500">
+                                <th class="p-4">User</th>
+                                <th class="p-4">Action</th>
+                                <th class="p-4">Timestamp</th>
+                                <th class="p-4 text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activity-log-table-body" class="divide-y divide-gray-100 text-sm text-gray-700">
+                            <!-- JS loaded rows -->
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Empty state for activity logs -->
+                <div id="activity-empty-state" class="hidden text-center py-12 text-gray-400">
+                    <p class="font-medium">No activity logged yet.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="tab-settings" class="hidden">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-4xl">
+                <h2 class="text-xl font-bold font-heading text-gray-800 mb-6">General Settings & Preferences</h2>
+                
+                <form action="/admin/settings" method="POST" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Institution Name</label>
+                            <input type="text" name="institution_name" value="{{ settings.institution_name }}" 
+                                   class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary focus:bg-white transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Academic Years (comma-separated)</label>
+                            <input type="text" name="academic_years" value="{{ settings.academic_years }}" 
+                                   class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary focus:bg-white transition-all">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Grading Rules Configuration (Read-Only Placeholder)</label>
+                        <input type="text" name="grading_rules" value="{{ settings.grading_rules }}" readonly
+                               class="w-full p-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 cursor-not-allowed">
+                        <span class="text-xs text-gray-450 mt-1 block">AITS Centralized Grading policy configuration (future customizable rules engine).</span>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Result Memo Footer</label>
+                        <textarea name="memo_footer" rows="3" 
+                                  class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary focus:bg-white transition-all">{{ settings.memo_footer }}</textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Default Export File Naming</label>
+                            <input type="text" name="export_naming" value="{{ settings.export_naming }}" 
+                                   class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary focus:bg-white transition-all">
+                            <span class="text-xs text-gray-450 mt-1 block">Variables: {type}, {timestamp}</span>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">System Logo (Placeholder Path)</label>
+                            <input type="text" value="/static/logo.jpg" readonly
+                                   class="w-full p-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 cursor-not-allowed">
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-100 pt-6">
+                        <h3 class="text-md font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                            SMTP/Email Configuration Placeholders
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">SMTP Host</label>
+                                <input type="text" name="email_host" value="{{ settings.email_host }}" 
+                                       class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">SMTP Port</label>
+                                <input type="text" name="email_port" value="{{ settings.email_port }}" 
+                                       class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">Enable TLS</label>
+                                <input type="text" name="email_use_tls" value="{{ settings.email_use_tls }}" 
+                                       class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end pt-4">
+                        <button type="submit" class="px-6 py-3 bg-secondary hover:bg-blue-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-blue-500/20 transition-all duration-300">
+                            Save System Settings
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- APPROVE CONFIRMATION MODAL -->
+        <!-- ========================================== -->
+        <div id="workflowApproveModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform scale-95 transition-transform duration-300">
+                <div class="p-6 text-center">
+                    <div class="w-14 h-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-heading font-bold text-gray-800">Approve Results?</h3>
+                    <p class="text-sm text-gray-500 mt-2">These results will become officially approved and locked.</p>
+                </div>
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                    <button onclick="closeWorkflowModal('workflowApproveModal')" id="workflow-approve-cancel-btn" class="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-100 transition-colors text-xs">
+                        Cancel
+                    </button>
+                    <button onclick="executeWorkflowApprove()" id="workflow-approve-confirm-btn" class="px-5 py-2.5 rounded-xl bg-success text-white font-bold hover:bg-green-600 transition-colors text-xs shadow-md">
+                        Confirm Approval
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- REJECT CONFIRMATION MODAL -->
+        <!-- ========================================== -->
+        <div id="workflowRejectModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform scale-95 transition-transform duration-300">
+                <div class="p-6">
+                    <div class="flex items-center gap-3 border-b border-gray-100 pb-4 mb-4">
+                        <div class="w-10 h-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-heading font-bold text-gray-800">Reject Results?</h3>
+                            <p class="text-xs text-gray-400 font-semibold mt-0.5">A rejection reason is required.</p>
+                        </div>
+                    </div>
+
+                    <!-- Form fields -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Rejection Reason *</label>
+                            <select id="workflow-reject-reason" class="w-full bg-gray-50 border border-gray-200 text-gray-800 text-xs rounded-xl focus:ring-2 focus:ring-primary block p-3 outline-none">
+                                <option value="">-- Select Reason --</option>
+                                <option value="Incorrect marks">Incorrect marks</option>
+                                <option value="Missing students">Missing students</option>
+                                <option value="Incorrect mapping">Incorrect mapping</option>
+                                <option value="Validation issue">Validation issue</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Custom Rejection Comments</label>
+                            <textarea id="workflow-reject-comments" placeholder="Describe the corrections needed..." rows="4" class="w-full bg-gray-50 border border-gray-200 text-gray-800 text-xs rounded-xl focus:ring-2 focus:ring-primary p-3 outline-none resize-none"></textarea>
+                            <p class="text-[10px] text-gray-400 mt-1 font-medium">Comments are mandatory if 'Other' is selected.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                    <button onclick="closeWorkflowModal('workflowRejectModal')" id="workflow-reject-cancel-btn" class="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-100 transition-colors text-xs">
+                        Cancel
+                    </button>
+                    <button onclick="executeWorkflowReject()" id="workflow-reject-confirm-btn" class="px-5 py-2.5 rounded-xl bg-error text-white font-bold hover:bg-red-600 transition-colors text-xs shadow-md">
+                        Confirm Rejection
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- RELEASE CONFIRMATION MODAL -->
+        <!-- ========================================== -->
+        <div id="workflowReleaseModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform scale-95 transition-transform duration-300">
+                <div class="p-6 text-center">
+                    <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-heading font-bold text-gray-800">Release Examination Results?</h3>
+                    <p class="text-sm text-gray-500 mt-2">Once released, students will be able to view their official results.</p>
+                    <p class="text-xs text-red-500 font-semibold mt-1">This action should require confirmation.</p>
+                </div>
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                    <button onclick="closeWorkflowModal('workflowReleaseModal')" id="workflow-release-cancel-btn" class="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-100 transition-colors text-xs">
+                        Cancel
+                    </button>
+                    <button onclick="executeReleaseAction()" id="workflow-release-confirm-btn" class="px-5 py-2.5 rounded-xl bg-primary text-white font-bold hover:bg-gray-800 transition-colors text-xs shadow-md">
+                        Release Results
+                    </button>
+                </div>
+            </div>
+        </div>
+
     </main>
 </div>
 
@@ -780,52 +1470,309 @@
         window.location.href = '/admin/export_results?batch=' + encodeURIComponent(batch);
     }
 
-    function syncAndConfirm() {
+    let activeSubjectIdForRelease = null;
+
+    function openReleaseModal(subjectId = null) {
+        activeSubjectIdForRelease = subjectId;
+        openWorkflowModal('workflowReleaseModal');
+    }
+
+    function executeReleaseAction() {
+        if (activeSubjectIdForRelease) {
+            executeSingleRelease(activeSubjectIdForRelease);
+        } else {
+            executeBulkRelease();
+        }
+    }
+
+    async function executeSingleRelease(subjectId) {
+        const cancelBtn = document.getElementById('workflow-release-cancel-btn');
+        const confirmBtn = document.getElementById('workflow-release-confirm-btn');
+        
+        cancelBtn.disabled = true;
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<span class="inline-block animate-spin mr-2 border-2 border-white border-t-transparent rounded-full w-3.5 h-3.5"></span>Releasing...';
+
+        try {
+            const formData = new FormData();
+            formData.append('subject_id', subjectId);
+            
+            const res = await fetch('/admin/release_results', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message, 'success');
+                closeWorkflowModal('workflowReleaseModal');
+                
+                // Remove row from Pending Release locally
+                const pendingRow = document.getElementById(`release-row-${subjectId}`);
+                if (pendingRow) pendingRow.remove();
+                
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                showToast(data.message || 'Release failed.', 'error');
+                cancelBtn.disabled = false;
+                confirmBtn.disabled = false;
+                confirmBtn.innerText = "Release Results";
+            }
+        } catch (e) {
+            showToast('Network error, please try again.', 'error');
+            cancelBtn.disabled = false;
+            confirmBtn.disabled = false;
+            confirmBtn.innerText = "Release Results";
+        }
+    }
+
+    function executeBulkRelease() {
+        const cancelBtn = document.getElementById('workflow-release-cancel-btn');
+        const confirmBtn = document.getElementById('workflow-release-confirm-btn');
+        
+        cancelBtn.disabled = true;
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<span class="inline-block animate-spin mr-2 border-2 border-white border-t-transparent rounded-full w-3.5 h-3.5"></span>Releasing...';
+        
+        const mainReleaseBtn = document.getElementById('mainReleaseBtn');
+        if (mainReleaseBtn) {
+            mainReleaseBtn.disabled = true;
+            mainReleaseBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            mainReleaseBtn.innerText = "Releasing...";
+        }
+        
+        // Sync values
         document.getElementById('release_batch_hidden').value = document.getElementById('calc_batch').value;
-        return confirm('WARNING: Are you sure you are ready to publish these results and send emails to all students?');
+        document.getElementById('release_semester_hidden').value = document.getElementById('calc_semester').value;
+        
+        // Submit form
+        document.getElementById('releaseForm').submit();
+    }
+
+    function switchReleaseSubTab(tabId) {
+        const subtabs = ['pending-release', 'released-results', 'release-history'];
+        subtabs.forEach(t => {
+            const btn = document.getElementById('releasesubtab-btn-' + t);
+            if (btn) {
+                btn.className = t === tabId 
+                    ? 'px-4 py-2 bg-white text-gray-800 rounded-lg shadow-sm font-bold'
+                    : 'px-4 py-2 rounded-lg hover:text-gray-800';
+            }
+            const sheet = document.getElementById('release-sheet-' + t);
+            if (sheet) {
+                sheet.classList.toggle('hidden', t !== tabId);
+                sheet.classList.toggle('block', t === tabId);
+            }
+        });
     }
 
     function downloadAdminError() {
         // Obsolete
     }
 
+    let activeSubjectIdForWorkflow = null;
+
+    function openWorkflowModal(modalId) {
+        const m = document.getElementById(modalId);
+        m.classList.remove('hidden');
+        setTimeout(() => {
+            m.classList.remove('opacity-0');
+            m.querySelector('.transform').classList.remove('scale-95');
+        }, 10);
+    }
+
+    function closeWorkflowModal(modalId) {
+        const m = document.getElementById(modalId);
+        m.classList.add('opacity-0');
+        m.querySelector('.transform').classList.add('scale-95');
+        setTimeout(() => {
+            m.classList.add('hidden');
+        }, 300);
+    }
+
     async function approveSubject(id) {
-        if(!confirm('Are you sure you want to approve this subject?')) return;
-        try {
-            const res = await fetch(`/admin/approve_subject/${id}`, { method: 'POST' });
-            const data = await res.json();
-            if (data.success) {
-                showToast(data.message, 'success');
-                document.getElementById(`submission-row-${id}`).remove();
-            } else {
-                showToast(data.message, 'error');
-            }
-        } catch (e) {
-            showToast('Request failed', 'error');
-        }
+        activeSubjectIdForWorkflow = id;
+        openWorkflowModal('workflowApproveModal');
     }
 
     async function rejectSubject(id) {
-        const reason = prompt('Please enter a reason for rejection:');
-        if(!reason) return;
+        activeSubjectIdForWorkflow = id;
+        // Reset fields
+        document.getElementById('workflow-reject-reason').value = "";
+        document.getElementById('workflow-reject-comments').value = "";
+        openWorkflowModal('workflowRejectModal');
+    }
+
+    async function executeWorkflowApprove() {
+        if (!activeSubjectIdForWorkflow) return;
+        const cancelBtn = document.getElementById('workflow-approve-cancel-btn');
+        const confirmBtn = document.getElementById('workflow-approve-confirm-btn');
+        
+        cancelBtn.disabled = true;
+        confirmBtn.disabled = true;
+        confirmBtn.innerText = "Approving...";
+
         try {
-            const formData = new FormData();
-            formData.append('reason', reason);
-            const res = await fetch(`/admin/reject_subject/${id}`, { method: 'POST', body: formData });
+            const res = await fetch(`/admin/approve_subject/${activeSubjectIdForWorkflow}`, {
+                method: 'POST'
+            });
             const data = await res.json();
             if (data.success) {
                 showToast(data.message, 'success');
-                document.getElementById(`submission-row-${id}`).remove();
+                closeWorkflowModal('workflowApproveModal');
+                
+                // Remove row from UI locally
+                const inboxRow = document.getElementById(`submission-row-${activeSubjectIdForWorkflow}`);
+                if (inboxRow) inboxRow.remove();
+                const reviewRow = document.getElementById(`review-row-${activeSubjectIdForWorkflow}`);
+                if (reviewRow) reviewRow.remove();
+                
+                await updateWorkflowStats();
+                
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
             } else {
-                showToast(data.message, 'error');
+                showToast(data.message || 'Approval failed.', 'error');
+                cancelBtn.disabled = false;
+                confirmBtn.disabled = false;
+                confirmBtn.innerText = "Confirm Approval";
             }
         } catch (e) {
-            showToast('Request failed', 'error');
+            showToast('Network error, please try again.', 'error');
+            cancelBtn.disabled = false;
+            confirmBtn.disabled = false;
+            confirmBtn.innerText = "Confirm Approval";
+        }
+    }
+
+    async function executeWorkflowReject() {
+        if (!activeSubjectIdForWorkflow) return;
+        const reason = document.getElementById('workflow-reject-reason').value.trim();
+        const comments = document.getElementById('workflow-reject-comments').value.trim();
+
+        if (!reason) {
+            showToast('Please select a rejection reason.', 'error');
+            return;
+        }
+
+        if (reason === 'Other' && !comments) {
+            showToast('Please enter rejection comments.', 'error');
+            return;
+        }
+
+        const cancelBtn = document.getElementById('workflow-reject-cancel-btn');
+        const confirmBtn = document.getElementById('workflow-reject-confirm-btn');
+        
+        cancelBtn.disabled = true;
+        confirmBtn.disabled = true;
+        confirmBtn.innerText = "Rejecting...";
+
+        try {
+            const formData = new FormData();
+            formData.append('reason', reason);
+            formData.append('comments', comments);
+
+            const res = await fetch(`/admin/reject_subject/${activeSubjectIdForWorkflow}`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message, 'success');
+                closeWorkflowModal('workflowRejectModal');
+                
+                // Remove row from UI locally
+                const inboxRow = document.getElementById(`submission-row-${activeSubjectIdForWorkflow}`);
+                if (inboxRow) inboxRow.remove();
+                const reviewRow = document.getElementById(`review-row-${activeSubjectIdForWorkflow}`);
+                if (reviewRow) reviewRow.remove();
+                
+                await updateWorkflowStats();
+
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                showToast(data.message || 'Rejection failed.', 'error');
+                cancelBtn.disabled = false;
+                confirmBtn.disabled = false;
+                confirmBtn.innerText = "Confirm Rejection";
+            }
+        } catch (e) {
+            showToast('Network error, please try again.', 'error');
+            cancelBtn.disabled = false;
+            confirmBtn.disabled = false;
+            confirmBtn.innerText = "Confirm Rejection";
+        }
+    }
+
+    function switchReviewSubTab(tabId) {
+        const subtabs = ['pending', 'submitted', 'approved', 'rejected'];
+        subtabs.forEach(t => {
+            const btn = document.getElementById('subtab-btn-' + t);
+            if (btn) {
+                btn.className = t === tabId 
+                    ? 'px-4 py-2 bg-white text-gray-800 rounded-lg shadow-sm'
+                    : 'px-4 py-2 rounded-lg hover:text-gray-800';
+            }
+            const sheet = document.getElementById('review-sheet-' + t);
+            if (sheet) {
+                sheet.classList.toggle('hidden', t !== tabId);
+                sheet.classList.toggle('block', t === tabId);
+            }
+        });
+    }
+
+    async function updateWorkflowStats() {
+        try {
+            const res = await fetch('/admin/dashboard_stats');
+            const data = await res.json();
+            if (data.success) {
+                if(document.getElementById('stat-draft')) document.getElementById('stat-draft').innerText = data.draft;
+                if(document.getElementById('stat-submitted')) document.getElementById('stat-submitted').innerText = data.submitted;
+                if(document.getElementById('stat-approved')) document.getElementById('stat-approved').innerText = data.approved;
+                if(document.getElementById('stat-rejected')) document.getElementById('stat-rejected').innerText = data.rejected;
+                if(document.getElementById('stat-pending-review')) document.getElementById('stat-pending-review').innerText = data.pending_review;
+            }
+        } catch (e) {}
+    }
+
+    async function loadActivityLog() {
+        const tbody = document.getElementById('activity-log-table-body');
+        const emptyState = document.getElementById('activity-empty-state');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center"><span class="inline-block animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></span> Loading activity...</td></tr>';
+        emptyState.classList.add('hidden');
+        
+        try {
+            const res = await fetch('/api/admin/activity');
+            const data = await res.json();
+            
+            if (data && data.length > 0) {
+                tbody.innerHTML = data.map(log => `
+                    <tr class="hover:bg-gray-50/50 transition-colors">
+                        <td class="p-4 font-semibold text-gray-800">${log.username}</td>
+                        <td class="p-4 text-gray-600">${log.action}</td>
+                        <td class="p-4 text-xs text-gray-500">${log.timestamp}</td>
+                        <td class="p-4 text-center">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${log.status === 'SUCCESS' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${log.status}</span>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = '';
+                emptyState.classList.remove('hidden');
+            }
+        } catch (e) {
+            tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-error font-medium">Failed to load activity logs.</td></tr>';
         }
     }
 
     function switchTab(tabId) {
-        const navs = ['dashboard', 'students', 'faculties', 'subjects'];
+        const navs = ['dashboard', 'review', 'students', 'faculties', 'subjects', 'release', 'activity', 'settings'];
         navs.forEach(nav => {
             const el = document.getElementById('nav-' + nav);
             if (el) {
@@ -841,12 +1788,20 @@
         });
         const titles = {
             dashboard: 'Admin Overview',
+            review: 'Admin Review Dashboard',
             students: 'Students Management',
             faculties: 'Faculty Management',
-            subjects: 'Subjects Management'
+            subjects: 'Subjects Management',
+            release: 'Result Release Dashboard',
+            activity: 'System Activity Log',
+            settings: 'System Settings & Preferences'
         };
         const titleEl = document.getElementById('page-title');
         if (titleEl) titleEl.innerText = titles[tabId] || '';
+        
+        if (tabId === 'activity') {
+            loadActivityLog();
+        }
     }
 
     // ── Student Filters ──────────────────────────────────────────────────────
@@ -895,9 +1850,12 @@
         const rows = document.querySelectorAll('.student-row');
         if (badge) badge.textContent = rows.length + ' student' + (rows.length !== 1 ? 's' : '') + ' shown';
 
+        // Load initial workflow stats
+        updateWorkflowStats();
+
         if (window.location.hash) {
             const hash = window.location.hash.substring(1);
-            if (['dashboard', 'students', 'faculties', 'subjects'].includes(hash)) switchTab(hash);
+            if (['dashboard', 'review', 'students', 'faculties', 'subjects', 'release', 'activity', 'settings'].includes(hash)) switchTab(hash);
         }
     }
 

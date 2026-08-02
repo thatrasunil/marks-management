@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% from 'components/subject_card.html' import subject_card %}
 {% block title %}Teacher Dashboard{% endblock %}
 
 {% block content %}
@@ -89,6 +90,14 @@
                 <span class="ml-auto bg-blue-700 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                     {{ subjects|length }}
                 </span>
+            </a>
+            <a href="/teacher/analytics" id="nav-analytics"
+                class="nav-link flex items-center gap-3 py-3 px-4 hover:bg-blue-800 rounded-lg text-blue-200 transition-colors">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Analytics Dashboard
             </a>
         </nav>
 
@@ -342,161 +351,10 @@
                     </span>
                 </div>
 
-                <!-- Marks Processing Control Panel -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 mb-8 p-6">
-                    <h2 class="text-xl font-heading font-bold text-gray-800 mb-4 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                        Marks Processing Engine
-                    </h2>
-                    
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 border-b border-gray-100 pb-8">
-                        <!-- External -->
-                        <div class="bg-blue-50/50 p-6 rounded-xl border border-blue-100 flex flex-col justify-between min-h-[240px]">
-                            <div>
-                                <h3 class="text-base font-bold text-primary mb-1">1. External Marks</h3>
-                                <p class="text-[11px] text-blue-600/70 mb-4 leading-snug">Upload the theory exam grades.</p>
-                            </div>
-                            <form class="space-y-3.5" enctype="multipart/form-data" onsubmit="handleAjaxUpload(event, '/teacher/upload_external')">
-                                <select name="subject_id" required class="w-full text-sm rounded-lg p-2.5 border border-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white text-gray-700">
-                                    <option value="">-- Select Subject --</option>
-                                    {% for subject in subjects %}<option value="{{ subject.id }}">{{ subject.code }} ({{ subject.processing_status }})</option>{% endfor %}
-                                </select>
-                                <input type="file" name="file" accept=".xlsx" required class="w-full text-xs bg-white border border-gray-200 rounded-lg p-2 text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
-                                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2.5 rounded-lg shadow-sm transition-transform hover:-translate-y-0.5 mt-1">Upload External</button>
-                            </form>
-                        </div>
-                        
-                        <!-- Mapping -->
-                        <div class="bg-emerald-50/50 p-6 rounded-xl border border-emerald-100 flex flex-col justify-between min-h-[240px]">
-                            <div>
-                                <h3 class="text-base font-bold text-emerald-700 mb-1">2. Mapping Sheet</h3>
-                                <p class="text-[11px] text-emerald-600/70 mb-4 leading-snug">Decoder sheet mapping Roll Number to Unique ID.</p>
-                            </div>
-                            <form class="space-y-3.5" enctype="multipart/form-data" onsubmit="handleAjaxUpload(event, '/teacher/upload_mapping')">
-                                <select name="subject_id" required class="w-full text-sm rounded-lg p-2.5 border border-gray-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-white text-gray-700">
-                                    <option value="">-- Select Subject --</option>
-                                    {% for subject in subjects %}<option value="{{ subject.id }}">{{ subject.code }} ({{ subject.processing_status }})</option>{% endfor %}
-                                </select>
-                                <input type="file" name="file" accept=".xlsx" required class="w-full text-xs bg-white border border-gray-200 rounded-lg p-2 text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer">
-                                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold py-2.5 rounded-lg shadow-sm transition-transform hover:-translate-y-0.5 mt-1">Upload Mapping</button>
-                            </form>
-                        </div>
-                        
-                        <!-- Internal -->
-                        <div class="bg-purple-50/50 p-6 rounded-xl border border-purple-100 flex flex-col justify-between min-h-[240px]">
-                            <div>
-                                <h3 class="text-base font-bold text-purple-700 mb-1">3. Internal Marks</h3>
-                                <p class="text-[11px] text-purple-600/70 mb-4 leading-snug">Upload the department internal assessment marks.</p>
-                            </div>
-                            <form class="space-y-3.5" enctype="multipart/form-data" onsubmit="handleAjaxUpload(event, '/teacher/upload_internal')">
-                                <select name="subject_id" required class="w-full text-sm rounded-lg p-2.5 border border-gray-200 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 bg-white text-gray-700">
-                                    <option value="">-- Select Subject --</option>
-                                    {% for subject in subjects %}<option value="{{ subject.id }}">{{ subject.code }} ({{ subject.processing_status }})</option>{% endfor %}
-                                </select>
-                                <input type="file" name="file" accept=".xlsx" required class="w-full text-xs bg-white border border-gray-200 rounded-lg p-2 text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer">
-                                <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold py-2.5 rounded-lg shadow-sm transition-transform hover:-translate-y-0.5 mt-1">Upload Internal</button>
-                            </form>
-                        </div>
-                    </div>
-
-                    <!-- Merge and Submit -->
-                    <div>
-                        <h3 class="text-sm font-bold text-gray-700 uppercase mb-3 text-center">4. Merge & Submit to Admin</h3>
-                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 flex flex-col items-center max-w-xl mx-auto">
-                            <select id="exec_subject_id" class="w-full mb-4 bg-white border border-gray-300 text-gray-800 text-sm rounded-lg p-2.5 outline-none">
-                                <option value="">-- Select Subject to Validate & Process --</option>
-                                {% for subject in subjects %}
-                                <option value="{{ subject.id }}">{{ subject.code }} ({{ subject.processing_status }})</option>
-                                {% endfor %}
-                            </select>
-                            
-                            <div class="flex flex-wrap gap-2 w-full justify-center">
-                                <button type="button" onclick="processResults()" class="flex-1 min-w-[120px] bg-gray-800 hover:bg-black text-white font-bold py-2.5 rounded-lg text-sm shadow transition-transform hover:-translate-y-0.5">⚡ Merge Results</button>
-                                <button type="button" onclick="exportResults()" class="px-4 border border-gray-300 bg-white hover:bg-gray-100 font-bold rounded-lg text-sm transition-colors">⬇️ Preview</button>
-                                <button type="button" onclick="downloadErrors()" class="px-4 border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 font-bold rounded-lg text-sm transition-colors">⚠️ Errors</button>
-                                <button type="button" onclick="submitToAdmin()" class="flex-1 min-w-[140px] bg-success hover:bg-green-600 text-white font-bold py-2.5 rounded-lg text-sm shadow border border-green-700 transition-transform hover:-translate-y-0.5">🚀 Submit to Admin</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ④ Subject cards grid -->
-                <div id="subjects" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {% for subject in subjects %}
-                    {% set stats = subject_stats[subject.id] %}
-                    <div
-                        class="subject-card bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative group transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                        <!-- Accent top strip -->
-                        <div class="h-2 bg-gradient-to-r from-primary via-secondary to-blue-400"></div>
-
-                        <div class="p-6">
-                            <!-- Header row -->
-                            <div class="flex justify-between items-start mb-4">
-                                <span
-                                    class="text-xs font-bold px-3 py-1 bg-blue-50 text-secondary rounded-full border border-blue-100">
-                                    {{ subject.code }}
-                                </span>
-                                <span
-                                    class="flex items-center gap-1.5 text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-100">
-                                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path
-                                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
-                                        </path>
-                                    </svg>
-                                    {{ subject.credits }} CR
-                                </span>
-                            </div>
-
-                            <!-- Subject name -->
-                            <h3
-                                class="text-xl font-bold text-gray-800 mb-4 leading-tight group-hover:text-primary transition-colors">
-                                {{ subject.name }}
-                            </h3>
-
-                            <!-- Stats Row -->
-                            <div class="grid grid-cols-3 gap-2 mb-6">
-                                <div class="bg-gray-50 rounded-xl p-2.5 text-center border border-gray-50">
-                                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">Students
-                                    </p>
-                                    <p class="text-sm font-black text-gray-800">{{ stats.student_count }}</p>
-                                </div>
-                                <div class="bg-gray-50 rounded-xl p-2.5 text-center border border-gray-50">
-                                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">Avg Score
-                                    </p>
-                                    <p class="text-sm font-black text-primary">{{ stats.avg_total if stats.student_count
-                                        > 0 else '—' }}</p>
-                                </div>
-                                <div class="bg-gray-50 rounded-xl p-2.5 text-center border border-gray-50">
-                                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">Pass %</p>
-                                    <p class="text-sm font-black text-success">{{ stats.pass_rate if stats.student_count
-                                        > 0 else '—' }}%</p>
-                                </div>
-                            </div>
-
-                            <!-- Action Buttons -->
-                            <div class="flex flex-col gap-2">
-                                {% if subject.rejection_reason and subject.processing_status == 'REJECTED' %}
-                                <div class="bg-red-50 border border-red-200 text-red-700 text-xs p-3 rounded-lg mb-2">
-                                    <strong class="font-bold flex items-center gap-1 mb-1">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                        Admin Feedback
-                                    </strong>
-                                    {{ subject.rejection_reason }}
-                                </div>
-                                {% endif %}
-                                <a href="/teacher/marks_preview/{{ subject.id }}"
-                                    class="w-full flex items-center justify-center gap-2 bg-primary hover:bg-blue-900 text-white text-sm font-bold py-4 rounded-xl transition-all shadow-md hover:shadow-lg">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                    Manage Results &amp; Marks
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Subject cards grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for data in subjects_data %}
+                        {{ subject_card(data) }}
                     {% else %}
                     <div
                         class="col-span-full bg-blue-50 border border-blue-100 text-blue-800 p-10 rounded-xl text-center">
@@ -514,7 +372,369 @@
     </main>
 </div>
 
+<!-- ── Upload Preview Modal ── -->
+<div id="upload-preview-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden transition-opacity duration-300 opacity-0">
+    <div class="bg-white rounded-3xl shadow-2xl border border-gray-100 max-w-2xl w-full mx-4 overflow-hidden transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh]">
+        <!-- Accent top strip -->
+        <div class="h-2 bg-gradient-to-r from-red-500 via-warning to-success" id="modal-accent-strip"></div>
+        
+        <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            <div>
+                <h3 class="text-xl font-heading font-black text-gray-800">Upload Preview</h3>
+                <p class="text-xs text-gray-500 font-bold mt-1">File: <span id="preview-filename" class="text-primary font-semibold">filename.xlsx</span></p>
+            </div>
+            <button onclick="closePreviewModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="p-6 overflow-y-auto space-y-6 flex-grow">
+            <!-- Row Stats Grid -->
+            <div class="grid grid-cols-3 sm:grid-cols-5 gap-3 text-center">
+                <div class="bg-blue-50/50 border border-blue-100 rounded-2xl p-3">
+                    <p class="text-[10px] text-gray-400 font-black uppercase tracking-wider">Rows Found</p>
+                    <p id="preview-rows-found" class="text-2xl font-black text-primary mt-1">0</p>
+                </div>
+                <div class="bg-green-50/50 border border-green-100 rounded-2xl p-3">
+                    <p class="text-[10px] text-gray-400 font-black uppercase tracking-wider">Valid Rows</p>
+                    <p id="preview-valid-rows" class="text-2xl font-black text-success mt-1">0</p>
+                </div>
+                <div class="bg-red-50/50 border border-red-100 rounded-2xl p-3">
+                    <p class="text-[10px] text-gray-400 font-black uppercase tracking-wider">Invalid Rows</p>
+                    <p id="preview-invalid-rows" class="text-2xl font-black text-error mt-1">0</p>
+                </div>
+                <div class="bg-amber-50/50 border border-amber-100 rounded-2xl p-3">
+                    <p class="text-[10px] text-gray-400 font-black uppercase tracking-wider">Warnings</p>
+                    <p id="preview-warnings" class="text-2xl font-black text-warning mt-1">0</p>
+                </div>
+                <div class="bg-rose-50/50 border border-rose-100 rounded-2xl p-3">
+                    <p class="text-[10px] text-gray-400 font-black uppercase tracking-wider">Errors</p>
+                    <p id="preview-errors" class="text-2xl font-black text-rose-600 mt-1">0</p>
+                </div>
+            </div>
+            
+            <!-- Message Banner -->
+            <div id="preview-banner" class="p-4 rounded-2xl border flex items-center gap-3 text-sm font-bold">
+                <!-- Icon and message inserted dynamically -->
+            </div>
+            
+            <!-- Error List Section -->
+            <div id="preview-error-section" class="space-y-3">
+                <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest">Validation Details & Errors</h4>
+                <div id="preview-error-list" class="max-h-52 overflow-y-auto bg-gray-50 border border-gray-200 rounded-2xl p-4 text-xs space-y-2.5 font-mono">
+                    <!-- Errors list here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="p-6 border-t border-gray-100 bg-gray-50 flex flex-wrap gap-3 justify-end items-center">
+            <button onclick="closePreviewModal()" class="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-100 transition-colors text-sm">
+                Cancel
+            </button>
+            <a id="preview-download-btn" href="#" class="px-5 py-2.5 rounded-xl border border-error bg-red-50 text-error font-bold hover:bg-red-100 transition-colors text-sm flex items-center gap-1.5 hidden">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Download Errors.xlsx
+            </a>
+            <button id="preview-import-btn" onclick="executeFinalImport()" class="px-6 py-2.5 rounded-xl bg-success hover:bg-green-600 text-white font-bold transition-transform hover:-translate-y-0.5 shadow-md text-sm">
+                Import Data
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Results Processing Modal ── -->
+<div id="processing-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden transition-opacity duration-300 opacity-0">
+    <div class="bg-white rounded-3xl shadow-2xl border border-gray-100 max-w-xl w-full mx-4 overflow-hidden transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh]">
+        <!-- Accent top strip -->
+        <div class="h-2 bg-gradient-to-r from-primary via-secondary to-blue-400" id="processing-modal-accent"></div>
+        
+        <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            <div>
+                <h3 class="text-xl font-heading font-black text-gray-800" id="processing-modal-title">Result Processing Engine</h3>
+                <p class="text-xs text-gray-500 font-bold mt-1" id="processing-modal-subtitle">Processing marks into examination results...</p>
+            </div>
+            <button onclick="closeProcessingModal()" id="processing-modal-close" class="text-gray-400 hover:text-gray-600 transition-colors hidden">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="p-6 overflow-y-auto space-y-6 flex-grow">
+            <!-- Steps Progress List -->
+            <div id="processing-steps-container" class="space-y-3">
+                <!-- Step 1: Validation -->
+                <div class="flex items-center justify-between text-sm font-semibold text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-100 transition-all duration-300" id="row-step-validation">
+                    <div class="flex items-center gap-3">
+                        <div id="icon-step-validation" class="w-6 h-6 rounded-full flex items-center justify-center bg-gray-200 text-gray-500 text-xs font-bold transition-all duration-300">1</div>
+                        <span>Validating Data</span>
+                    </div>
+                    <div id="status-step-validation" class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Pending</div>
+                </div>
+                <!-- Step 2: Totals -->
+                <div class="flex items-center justify-between text-sm font-semibold text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-100 transition-all duration-300" id="row-step-totals">
+                    <div class="flex items-center gap-3">
+                        <div id="icon-step-totals" class="w-6 h-6 rounded-full flex items-center justify-center bg-gray-200 text-gray-500 text-xs font-bold transition-all duration-300">2</div>
+                        <span>Calculating Totals</span>
+                    </div>
+                    <div id="status-step-totals" class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Pending</div>
+                </div>
+                <!-- Step 3: Grades -->
+                <div class="flex items-center justify-between text-sm font-semibold text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-100 transition-all duration-300" id="row-step-grades">
+                    <div class="flex items-center gap-3">
+                        <div id="icon-step-grades" class="w-6 h-6 rounded-full flex items-center justify-center bg-gray-200 text-gray-500 text-xs font-bold transition-all duration-300">3</div>
+                        <span>Assigning Grades</span>
+                    </div>
+                    <div id="status-step-grades" class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Pending</div>
+                </div>
+                <!-- Step 4: SGPA -->
+                <div class="flex items-center justify-between text-sm font-semibold text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-100 transition-all duration-300" id="row-step-sgpa">
+                    <div class="flex items-center gap-3">
+                        <div id="icon-step-sgpa" class="w-6 h-6 rounded-full flex items-center justify-center bg-gray-200 text-gray-500 text-xs font-bold transition-all duration-300">4</div>
+                        <span>Calculating SGPA</span>
+                    </div>
+                    <div id="status-step-sgpa" class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Pending</div>
+                </div>
+                <!-- Step 5: Draft Results -->
+                <div class="flex items-center justify-between text-sm font-semibold text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-100 transition-all duration-300" id="row-step-draft">
+                    <div class="flex items-center gap-3">
+                        <div id="icon-step-draft" class="w-6 h-6 rounded-full flex items-center justify-center bg-gray-200 text-gray-500 text-xs font-bold transition-all duration-300">5</div>
+                        <span>Creating Draft Results</span>
+                    </div>
+                    <div id="status-step-draft" class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Pending</div>
+                </div>
+                <!-- Step 6: Saving -->
+                <div class="flex items-center justify-between text-sm font-semibold text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-100 transition-all duration-300" id="row-step-saving">
+                    <div class="flex items-center gap-3">
+                        <div id="icon-step-saving" class="w-6 h-6 rounded-full flex items-center justify-center bg-gray-200 text-gray-500 text-xs font-bold transition-all duration-300">6</div>
+                        <span>Saving Results</span>
+                    </div>
+                    <div id="status-step-saving" class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Pending</div>
+                </div>
+                <!-- Step 7: Completed -->
+                <div class="flex items-center justify-between text-sm font-semibold text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-100 transition-all duration-300" id="row-step-completed">
+                    <div class="flex items-center gap-3">
+                        <div id="icon-step-completed" class="w-6 h-6 rounded-full flex items-center justify-center bg-gray-200 text-gray-500 text-xs font-bold transition-all duration-300">7</div>
+                        <span>Completed</span>
+                    </div>
+                    <div id="status-step-completed" class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Pending</div>
+                </div>
+            </div>
+
+            <!-- Error Report Section -->
+            <div id="processing-errors-container" class="space-y-3 hidden animate-in">
+                <h4 class="text-xs font-black text-red-500 uppercase tracking-widest">Processing Blocks & Errors</h4>
+                <div id="processing-errors-list" class="max-h-52 overflow-y-auto bg-red-50 border border-red-200 rounded-2xl p-4 text-xs space-y-2.5 font-mono text-red-700">
+                    <!-- Errors list here -->
+                </div>
+            </div>
+
+            <!-- Success Summary Section -->
+            <div id="processing-summary-container" class="space-y-4 hidden animate-in">
+                <h4 class="text-xs font-black text-green-600 uppercase tracking-widest">Processing Summary</h4>
+                <div class="bg-green-50/50 border border-green-100 rounded-2xl p-4 space-y-3 text-sm">
+                    <div class="grid grid-cols-2 gap-y-2 text-gray-700">
+                        <div class="font-medium">Department:</div>
+                        <div class="font-bold text-right text-gray-900" id="summary-dept">-</div>
+                        
+                        <div class="font-medium">Batch:</div>
+                        <div class="font-bold text-right text-gray-900" id="summary-batch">-</div>
+                        
+                        <div class="font-medium">Semester:</div>
+                        <div class="font-bold text-right text-gray-900" id="summary-semester">-</div>
+
+                        <div class="font-medium">Processed Students:</div>
+                        <div class="font-bold text-right text-primary" id="summary-students">-</div>
+
+                        <div class="font-medium">Processed Subjects:</div>
+                        <div class="font-bold text-right text-gray-900" id="summary-subjects">-</div>
+
+                        <div class="font-medium">Passed Students:</div>
+                        <div class="font-bold text-right text-success" id="summary-passed">-</div>
+
+                        <div class="font-medium">Failed Students:</div>
+                        <div class="font-bold text-right text-error" id="summary-failed">-</div>
+
+                        <div class="font-medium">Processing Duration:</div>
+                        <div class="font-bold text-right text-gray-500" id="summary-duration">-</div>
+
+                        <div class="font-medium">Start Time:</div>
+                        <div class="font-bold text-right text-gray-500" id="summary-start">-</div>
+
+                        <div class="font-medium">End Time:</div>
+                        <div class="font-bold text-right text-gray-500" id="summary-end">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end items-center gap-3" id="processing-modal-footer">
+            <button onclick="closeProcessingModal()" id="processing-cancel-btn" class="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-100 transition-colors text-sm">
+                Cancel
+            <button onclick="closeProcessingModalReload()" id="processing-ok-btn" class="px-6 py-2.5 rounded-xl bg-success hover:bg-green-600 text-white font-bold transition-transform hover:-translate-y-0.5 shadow-md text-sm hidden">
+                Complete
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Submission Modal -->
+<div id="submission-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden transition-opacity duration-300 opacity-0">
+    <div class="bg-white rounded-3xl shadow-2xl border border-gray-100 max-w-xl w-full mx-4 overflow-hidden transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh]">
+        <!-- Accent top strip -->
+        <div class="h-2 bg-gradient-to-r from-green-500 via-emerald-600 to-teal-500"></div>
+        
+        <div class="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+            <div>
+                <h3 class="text-xl font-heading font-black text-gray-800" id="submission-modal-title">Submit Results?</h3>
+                <p class="text-xs text-gray-500 font-bold mt-1" id="submission-modal-subtitle">Confirm submission to the administrator</p>
+            </div>
+            <button onclick="closeSubmissionModal()" id="submission-modal-close" class="text-gray-400 hover:text-gray-600 transition-colors hidden">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="p-6 overflow-y-auto space-y-4 flex-grow text-sm">
+            <!-- Confirmation View -->
+            <div id="submission-confirm-view" class="space-y-4">
+                <div class="p-4 bg-amber-50 border border-amber-200 text-amber-850 rounded-2xl flex items-start space-x-3">
+                    <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                    <div>
+                        <p class="font-bold text-amber-800">Important Notice</p>
+                        <p class="text-xs text-amber-700 mt-1 font-medium">Once submitted, results will be locked and cannot be edited unless rejected by the administrator.</p>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50/50 border border-gray-100 rounded-2xl p-4 space-y-3 font-semibold">
+                    <div class="grid grid-cols-2 gap-y-2 text-gray-750">
+                        <div class="font-medium text-gray-500">Subject:</div>
+                        <div class="font-bold text-right text-gray-900" id="confirm-subject-name">-</div>
+                        
+                        <div class="font-medium text-gray-500">Code:</div>
+                        <div class="font-bold text-right text-gray-900" id="confirm-subject-code">-</div>
+                        
+                        <div class="font-medium text-gray-500">Semester:</div>
+                        <div class="font-bold text-right text-gray-900" id="confirm-semester">-</div>
+
+                        <div class="font-medium text-gray-500">Department:</div>
+                        <div class="font-bold text-right text-gray-900" id="confirm-department">-</div>
+
+                        <div class="font-medium text-gray-500">Batch:</div>
+                        <div class="font-bold text-right text-gray-900" id="confirm-batch">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading View -->
+            <div id="submission-loading-view" class="hidden flex flex-col items-center justify-center py-10 space-y-4">
+                <svg class="animate-spin h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="font-bold text-gray-700">Submitting results to Administrator...</p>
+            </div>
+
+            <!-- Success Summary View -->
+            <div id="submission-success-view" class="hidden space-y-4">
+                <div class="p-4 bg-green-50 border border-green-200 text-green-800 rounded-2xl flex items-start space-x-3">
+                    <svg class="w-6 h-6 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <div>
+                        <p class="font-bold text-base">Submission Successful</p>
+                        <p class="text-xs text-green-700 mt-1 font-medium">Results have been locked and submitted for administrative review.</p>
+                    </div>
+                </div>
+                
+                <div class="bg-green-50/30 border border-green-100 rounded-2xl p-4 space-y-3 font-semibold">
+                    <div class="grid grid-cols-2 gap-y-2 text-gray-750">
+                        <div class="font-medium text-gray-500">Semester:</div>
+                        <div class="font-bold text-right text-gray-900" id="success-semester">-</div>
+
+                        <div class="font-medium text-gray-500">Department:</div>
+                        <div class="font-bold text-right text-gray-900" id="success-department">-</div>
+
+                        <div class="font-medium text-gray-500">Subject:</div>
+                        <div class="font-bold text-right text-gray-900" id="success-subject">-</div>
+
+                        <div class="font-medium text-gray-500">Submitted By:</div>
+                        <div class="font-bold text-right text-gray-900" id="success-submitted-by">-</div>
+
+                        <div class="font-medium text-gray-500">Submission Time:</div>
+                        <div class="font-bold text-right text-gray-900" id="success-time">-</div>
+
+                        <div class="font-medium text-gray-500">Status:</div>
+                        <div class="font-bold text-right text-green-800 bg-green-100 px-2.5 py-0.5 rounded inline-block text-xs uppercase tracking-wider font-extrabold" style="justify-self: end;">
+                            SUBMITTED
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        </div>
+    </div>
+</div>
+
+<!-- History Modal (Goal 6) -->
+<div id="history-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+    <div class="bg-white rounded-3xl shadow-2xl border border-gray-100 max-w-lg w-full mx-4 overflow-hidden transform scale-95 transition-all duration-300 flex flex-col max-h-[80vh]">
+        <div class="h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+        <div class="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+            <div>
+                <h3 class="text-xl font-heading font-bold text-gray-800" id="history-modal-title">Submission History</h3>
+                <p class="text-xs text-gray-500 font-bold mt-1" id="history-modal-subtitle">Course Name</p>
+            </div>
+            <button onclick="closeHistoryModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="p-6 overflow-y-auto flex-grow">
+            <!-- Timeline -->
+            <div id="history-timeline-container" class="relative border-l border-gray-200 pl-6 ml-2 space-y-6">
+                <!-- Timeline items will be injected here -->
+            </div>
+            <div id="history-loading" class="hidden flex flex-col items-center justify-center py-8 space-y-2">
+                <svg class="animate-spin h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="text-xs text-gray-455 text-gray-500 font-bold">Loading history...</span>
+            </div>
+        </div>
+        
+        <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end">
+            <button onclick="closeHistoryModal()" class="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-100 transition-colors text-sm">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+
 <script>
+    // Suppress Tailwind CDN production warning
+    (function() {
+        const originalWarn = console.warn;
+        console.warn = function(...args) {
+            if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) {
+                return;
+            }
+            originalWarn.apply(console, args);
+        };
+    })();
+
     // ── Tab switching ────────────────────────────────────────────────────────
     function switchTab(tabId) {
         ['dashboard', 'subjects'].forEach(nav => {
@@ -535,24 +755,276 @@
         });
     }
 
+    function updateCardUI(subjectId) {
+        const card = document.getElementById('card_' + subjectId);
+        if(!card) return;
+
+        const internalUploaded = card.getAttribute('data-internal-uploaded') === 'true';
+        const externalUploaded = card.getAttribute('data-external-uploaded') === 'true';
+        const mappingUploaded = card.getAttribute('data-mapping-uploaded') === 'true';
+
+        // Update Badges
+        const updateBadge = (id, uploaded) => {
+            const badge = document.getElementById(id);
+            if(badge) {
+                if(uploaded) {
+                    badge.className = "text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded";
+                    badge.innerText = "UPLOADED";
+                } else {
+                    badge.className = "text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded";
+                    badge.innerText = "NOT UPLOADED";
+                }
+            }
+        };
+        updateBadge('status_badge_internal_' + subjectId, internalUploaded);
+        updateBadge('status_badge_external_' + subjectId, externalUploaded);
+        updateBadge('status_badge_mapping_' + subjectId, mappingUploaded);
+
+        // Update Summary Rows
+        const updateSummary = (id, label, uploaded) => {
+            const row = document.getElementById(id);
+            if(row) {
+                if(uploaded) {
+                    row.innerHTML = `<span class="text-gray-500 font-medium">${label}:</span> <span class="text-green-600 font-bold">✓ Uploaded</span>`;
+                } else {
+                    row.innerHTML = `<span class="text-gray-500 font-medium">${label}:</span> <span class="text-red-500 font-bold">✗ Missing</span>`;
+                }
+            }
+        };
+        updateSummary('summary_row_internal_' + subjectId, 'Internal', internalUploaded);
+        updateSummary('summary_row_external_' + subjectId, 'External', externalUploaded);
+        updateSummary('summary_row_mapping_' + subjectId, 'Mapping', mappingUploaded);
+
+        // Update Banner & Button
+        const allUploaded = internalUploaded && externalUploaded && mappingUploaded;
+        const banner = document.getElementById('missing_banner_' + subjectId);
+        if(banner) {
+            if(allUploaded) {
+                banner.classList.add('hidden');
+            } else {
+                banner.classList.remove('hidden');
+            }
+        }
+
+        const btn = document.getElementById('btn_process_' + subjectId);
+        if(btn) {
+            if(allUploaded) {
+                btn.disabled = false;
+                btn.className = "w-full bg-gray-800 hover:bg-black text-white text-sm font-bold py-2.5 rounded-xl shadow transition-transform hover:-translate-y-0.5";
+            } else {
+                btn.disabled = true;
+                btn.className = "w-full bg-gray-100 text-gray-400 text-sm font-bold py-2.5 rounded-xl cursor-not-allowed border border-gray-200";
+            }
+        }
+    }
+
+    let currentFileUuid = '';
+    let currentImportEndpoint = '';
+    let currentSubjectId = '';
+
+    function openPreviewModal(data, endpoint, subjectId) {
+        currentFileUuid = data.file_uuid;
+        currentImportEndpoint = endpoint;
+        currentSubjectId = subjectId;
+
+        document.getElementById('preview-filename').textContent = data.filename;
+        document.getElementById('preview-rows-found').textContent = data.rows_found;
+        document.getElementById('preview-valid-rows').textContent = data.valid_rows;
+        document.getElementById('preview-invalid-rows').textContent = data.invalid_rows;
+        document.getElementById('preview-warnings').textContent = data.warnings || 0;
+        document.getElementById('preview-errors').textContent = data.errors;
+
+        const accentStrip = document.getElementById('modal-accent-strip');
+        const banner = document.getElementById('preview-banner');
+        const importBtn = document.getElementById('preview-import-btn');
+        const downloadBtn = document.getElementById('preview-download-btn');
+        const errorSection = document.getElementById('preview-error-section');
+        const errorList = document.getElementById('preview-error-list');
+
+        banner.className = "p-4 rounded-2xl border flex items-center gap-3 text-sm font-bold animate-in";
+
+        if (data.errors > 0) {
+            accentStrip.className = "h-2 bg-gradient-to-r from-red-500 to-warning";
+            banner.classList.add("bg-red-50", "border-red-100", "text-error");
+            banner.innerHTML = `
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div>
+                    <p>Validation Failed</p>
+                    <p class="text-xs font-normal text-red-500 mt-0.5">${data.errors} Errors Found</p>
+                </div>
+            `;
+            importBtn.textContent = "Import Valid Data";
+            importBtn.className = "px-6 py-2.5 rounded-xl bg-warning hover:bg-amber-600 text-white font-bold transition-transform hover:-translate-y-0.5 shadow-md text-sm";
+            
+            downloadBtn.classList.remove('hidden');
+            downloadBtn.href = data.error_report_url;
+        } else {
+            accentStrip.className = "h-2 bg-gradient-to-r from-success to-green-500";
+            banner.classList.add("bg-green-50", "border-green-100", "text-success");
+            banner.innerHTML = `
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div>
+                    <p>Validation Successful</p>
+                    <p class="text-xs font-normal text-green-600 mt-0.5">${data.valid_rows} Rows Ready for Import</p>
+                </div>
+            `;
+            importBtn.textContent = "Import Data";
+            importBtn.className = "px-6 py-2.5 rounded-xl bg-success hover:bg-green-600 text-white font-bold transition-transform hover:-translate-y-0.5 shadow-md text-sm";
+            
+            downloadBtn.classList.add('hidden');
+        }
+
+        errorList.innerHTML = '';
+        if (data.errors_list && data.errors_list.length > 0) {
+            errorSection.classList.remove('hidden');
+            data.errors_list.forEach(err => {
+                const errEl = document.createElement('div');
+                errEl.className = "border-b border-gray-100 pb-2 last:border-0";
+                
+                const rowLabel = err.row_num !== '-' ? `Row ${err.row_num}` : 'General';
+                const colLabel = err.column !== '-' ? ` [Col: ${err.column}]` : '';
+                const valLabel = err.value !== '-' && err.value !== '' ? ` (Value: "${err.value}")` : '';
+                
+                errEl.innerHTML = `
+                    <div class="flex justify-between font-bold text-gray-800">
+                        <span>${rowLabel}${colLabel}</span>
+                        <span class="text-error">${err.problem}</span>
+                    </div>
+                    <div class="text-[11px] text-gray-500 mt-0.5">${err.reason}${valLabel}</div>
+                `;
+                errorList.appendChild(errEl);
+            });
+        } else {
+            errorSection.classList.remove('hidden');
+            errorList.innerHTML = '<div class="text-center text-gray-500 py-4 font-sans font-medium text-xs">✓ No errors detected. All rows are valid and ready.</div>';
+        }
+
+        if (data.valid_rows === 0) {
+            importBtn.disabled = true;
+            importBtn.className = "px-6 py-2.5 rounded-xl bg-gray-200 text-gray-400 font-bold cursor-not-allowed text-sm border border-gray-300 shadow-none";
+        } else {
+            importBtn.disabled = false;
+        }
+
+        const modal = document.getElementById('upload-preview-modal');
+        modal.classList.remove('hidden');
+        void modal.offsetWidth;
+        modal.classList.add('opacity-100');
+        modal.querySelector('.bg-white').classList.remove('scale-95');
+        modal.querySelector('.bg-white').classList.add('scale-100');
+    }
+
+    function closePreviewModal() {
+        const modal = document.getElementById('upload-preview-modal');
+        modal.classList.remove('opacity-100');
+        modal.querySelector('.bg-white').classList.add('scale-95');
+        modal.querySelector('.bg-white').classList.remove('scale-100');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+
+    async function executeFinalImport() {
+        if (!currentFileUuid || !currentImportEndpoint || !currentSubjectId) return;
+        
+        const importBtn = document.getElementById('preview-import-btn');
+        const oldText = importBtn.textContent;
+        importBtn.textContent = 'Importing...';
+        importBtn.disabled = true;
+        
+        const formData = new FormData();
+        formData.append('subject_id', currentSubjectId);
+        formData.append('file_uuid', currentFileUuid);
+        
+        try {
+            const res = await fetch(currentImportEndpoint, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            
+            closePreviewModal();
+            showToast(data.message, data.success ? 'success' : 'error');
+            
+            if (data.success) {
+                // Update Card UI
+                let uploadType = '';
+                if (currentImportEndpoint.includes('upload_internal')) uploadType = 'internal';
+                else if (currentImportEndpoint.includes('upload_external')) uploadType = 'external';
+                else if (currentImportEndpoint.includes('upload_mapping')) uploadType = 'mapping';
+                
+                if (uploadType) {
+                    const uploadBtn = document.getElementById(`btn_${uploadType}_${currentSubjectId}`);
+                    const fileLabel = document.getElementById(`lbl_${uploadType}_${currentSubjectId}`);
+                    
+                    if (uploadBtn) uploadBtn.classList.add('hidden');
+                    if (fileLabel) fileLabel.innerText = '';
+                    
+                    const card = document.getElementById('card_' + currentSubjectId);
+                    if (card) {
+                        card.setAttribute(`data-${uploadType}-uploaded`, 'true');
+                        updateCardUI(currentSubjectId);
+                    }
+                    
+                    if (uploadType === 'internal') {
+                        const match = data.message.match(/for (\d+) students/);
+                        if (match) {
+                            const countSpan = document.getElementById('student_count_' + currentSubjectId);
+                            if (countSpan) countSpan.innerText = match[1];
+                        }
+                    }
+                }
+            }
+        } catch (err) {
+            showToast('Request failed.', 'error');
+        } finally {
+            importBtn.textContent = oldText;
+            importBtn.disabled = false;
+        }
+    }
+
     async function handleAjaxUpload(e, endpoint) {
         e.preventDefault();
         const form = e.target;
+        
+        // Client-side file selection check
+        const fileInput = form.querySelector('input[type="file"]');
+        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+            showToast('Please select a file first.', 'error');
+            return;
+        }
+
         const submitBtn = form.querySelector('button[type="submit"]');
         const oldText = submitBtn.textContent;
-        submitBtn.textContent = 'Uploading...';
+        submitBtn.textContent = 'Validating...';
         submitBtn.disabled = true;
 
+        const subjectId = form.querySelector('input[name="subject_id"]').value;
+        
+        let uploadType = '';
+        if (endpoint.includes('upload_internal')) uploadType = 'internal';
+        else if (endpoint.includes('upload_external')) uploadType = 'external';
+        else if (endpoint.includes('upload_mapping')) uploadType = 'mapping';
+        
+        const validateFormData = new FormData(form);
+        validateFormData.append('upload_type', uploadType);
+
         try {
-            const res = await fetch(endpoint, {
+            const res = await fetch('/teacher/validate_upload', {
                 method: 'POST',
-                body: new FormData(form)
+                body: validateFormData
             });
             const data = await res.json();
-            showToast(data.message, data.success ? 'success' : 'error');
-            if(data.success) {
+            
+            if (data.success) {
                 form.reset();
-                setTimeout(() => location.reload(), 1500);
+                openPreviewModal(data, endpoint, subjectId);
+            } else {
+                showToast(data.message, 'error');
             }
         } catch(err) {
             showToast('Request failed.', 'error');
@@ -562,45 +1034,485 @@
         }
     }
 
-    async function processResults() {
-        const sid = document.getElementById('exec_subject_id').value;
-        if(!sid) return showToast('Select a subject!', 'warning');
-        try {
-            const res = await fetch('/teacher/process_results/' + sid, { method: 'POST' });
-            const data = await res.json();
-            showToast(data.message, data.success ? 'success' : 'error');
-            if(data.success) setTimeout(() => location.reload(), 1500);
-        } catch(err) {
-            showToast('Request failed', 'error');
+    function setStepState(stepId, state, statusText) {
+        const row = document.getElementById('row-step-' + stepId);
+        const icon = document.getElementById('icon-step-' + stepId);
+        const status = document.getElementById('status-step-' + stepId);
+        
+        if(!row || !icon || !status) return;
+        
+        // Reset classes
+        row.className = "flex items-center justify-between text-sm font-semibold p-3 rounded-xl border transition-all duration-300 ";
+        icon.className = "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border transition-all duration-300 ";
+        status.className = "text-[11px] font-bold uppercase tracking-wider ";
+        
+        if (state === 'pending') {
+            row.classList.add("text-gray-700", "bg-gray-50", "border-gray-100");
+            icon.classList.add("bg-gray-200", "text-gray-500", "border-transparent");
+            icon.innerText = getStepNumber(stepId);
+            status.classList.add("text-gray-400");
+            status.innerText = statusText || "Pending";
+        } else if (state === 'running') {
+            row.classList.add("text-primary", "bg-blue-50/30", "border-blue-100");
+            icon.classList.add("bg-blue-500", "text-white", "border-blue-500");
+            icon.innerHTML = `<svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+            status.classList.add("text-secondary", "animate-pulse");
+            status.innerText = statusText || "Running...";
+        } else if (state === 'success') {
+            row.classList.add("text-green-800", "bg-green-50/50", "border-green-100");
+            icon.classList.add("bg-success", "text-white", "border-success");
+            icon.innerHTML = `<svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`;
+            status.classList.add("text-success");
+            status.innerText = statusText || "✓ Done";
+        } else if (state === 'failed') {
+            row.classList.add("text-error", "bg-red-50/50", "border-red-100");
+            icon.classList.add("bg-error", "text-white", "border-error");
+            icon.innerHTML = `<svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+            status.classList.add("text-error");
+            status.innerText = statusText || "✗ Failed";
         }
     }
 
-    async function submitToAdmin() {
-        const sid = document.getElementById('exec_subject_id').value;
-        if(!sid) return showToast('Select a subject!', 'warning');
-        if(!confirm('Submit to Admin? You cannot modify marks after submission until it is reviewed.')) return;
+    function getStepNumber(stepId) {
+        const mapping = {
+            'validation': '1',
+            'totals': '2',
+            'grades': '3',
+            'sgpa': '4',
+            'draft': '5',
+            'saving': '6',
+            'completed': '7'
+        };
+        return mapping[stepId] || '';
+    }
+
+    let animationIntervals = [];
+
+    function clearAllAnimations() {
+        animationIntervals.forEach(clearTimeout);
+        animationIntervals = [];
+    }
+
+    async function processResults(sid) {
+        const subjectId = sid || document.getElementById('exec_subject_id')?.value;
+        if(!subjectId) return showToast('Select a subject!', 'warning');
+
+        // Disable Process Results button on the dashboard card
+        const btn = document.getElementById('btn_process_' + subjectId);
+        if(btn) {
+            btn.disabled = true;
+            btn.className = "w-full bg-gray-100 text-gray-400 text-sm font-bold py-2.5 rounded-xl cursor-not-allowed border border-gray-200";
+            btn.innerText = '⚡ Processing...';
+        }
+
+        // Open Modal and reset steps to pending
+        const modal = document.getElementById('processing-modal');
+        modal.classList.remove('hidden');
+        void modal.offsetWidth;
+        modal.classList.add('opacity-100');
+        modal.querySelector('.bg-white').classList.remove('scale-95');
+        modal.querySelector('.bg-white').classList.add('scale-100');
+
+        document.getElementById('processing-modal-close').classList.add('hidden');
+        document.getElementById('processing-cancel-btn').classList.remove('hidden');
+        document.getElementById('processing-ok-btn').classList.add('hidden');
+        
+        document.getElementById('processing-errors-container').classList.add('hidden');
+        document.getElementById('processing-summary-container').classList.add('hidden');
+        document.getElementById('processing-steps-container').classList.remove('hidden');
+
+        const steps = ['validation', 'totals', 'grades', 'sgpa', 'draft', 'saving', 'completed'];
+        steps.forEach(s => setStepState(s, 'pending'));
+
+        clearAllAnimations();
+
+        let apiResolved = false;
+        let apiData = null;
+        let apiError = null;
+
+        // Start AJAX Call
+        const apiPromise = fetch('/teacher/process_results/' + subjectId, { method: 'POST' })
+            .then(async res => {
+                const data = await res.json();
+                apiResolved = true;
+                if (res.ok && data.success) {
+                    apiData = data;
+                } else {
+                    apiError = data;
+                }
+            })
+            .catch(err => {
+                apiResolved = true;
+                apiError = { message: 'Network connection or request failed.' };
+            });
+
+        // Step by step animation loop
+        let currentStepIdx = 0;
+
+        function runStepAnimation() {
+            if (currentStepIdx >= steps.length) return;
+            const currentStep = steps[currentStepIdx];
+            
+            // Mark current step as running
+            setStepState(currentStep, 'running');
+
+            // Set a timeout to proceed to the next step or wait for API
+            const timeoutId = setTimeout(() => {
+                // If API failed and we are at the step matching the stage
+                if (apiResolved && apiError) {
+                    handleFailure(apiError);
+                    return;
+                }
+
+                // If API succeeded and we reached the end
+                if (apiResolved && apiData && currentStep === 'completed') {
+                    setStepState(currentStep, 'success');
+                    handleSuccess(apiData);
+                    return;
+                }
+
+                // If API succeeded but we are still animating previous steps
+                // or if API hasn't resolved yet, we continue animating up to step 6 (Saving)
+                if (currentStep === 'saving') {
+                    // Wait for API resolution at the saving step
+                    const checkInterval = setInterval(() => {
+                        if (apiResolved) {
+                            clearInterval(checkInterval);
+                            if (apiError) {
+                                handleFailure(apiError);
+                            } else {
+                                setStepState('saving', 'success');
+                                setStepState('completed', 'success');
+                                handleSuccess(apiData);
+                            }
+                        }
+                    }, 100);
+                    return;
+                }
+
+                // Transition current step to success
+                setStepState(currentStep, 'success');
+                currentStepIdx++;
+                runStepAnimation();
+            }, 300); // 300ms transition delay per step
+            
+            animationIntervals.push(timeoutId);
+        }
+
+        function handleFailure(err) {
+            clearAllAnimations();
+            
+            // Re-enable dashboard process button
+            if(btn) {
+                btn.disabled = false;
+                btn.className = "w-full bg-gray-800 hover:bg-black text-white text-sm font-bold py-2.5 rounded-xl shadow transition-transform hover:-translate-y-0.5";
+                btn.innerText = '⚡ Process Results';
+            }
+
+            // Determine where it failed
+            let failStep = 'validation';
+            if (err.stage === 'processing') {
+                failStep = 'saving';
+            }
+            
+            setStepState(failStep, 'failed', 'Error');
+            
+            // Mark subsequent steps as pending
+            const startIndex = steps.indexOf(failStep) + 1;
+            for (let i = startIndex; i < steps.length; i++) {
+                setStepState(steps[i], 'pending');
+            }
+
+            // Show error block
+            const errList = document.getElementById('processing-errors-list');
+            errList.innerHTML = '';
+            
+            if (err.errors && err.errors.length > 0) {
+                err.errors.forEach(e => {
+                    const div = document.createElement('div');
+                    div.className = "py-1.5 border-b border-red-100 last:border-0";
+                    div.innerText = e;
+                    errList.appendChild(div);
+                });
+            } else {
+                const div = document.createElement('div');
+                div.className = "py-1.5";
+                div.innerText = err.message || "An unexpected error occurred.";
+                errList.appendChild(div);
+            }
+            
+            document.getElementById('processing-errors-container').classList.remove('hidden');
+            document.getElementById('processing-modal-close').classList.remove('hidden');
+            document.getElementById('processing-cancel-btn').classList.add('hidden');
+            
+            showToast(err.message || 'Processing failed.', 'error');
+        }
+
+        function handleSuccess(data) {
+            clearAllAnimations();
+            
+            // Re-enable dashboard process button but keep visual look
+            if(btn) {
+                btn.className = "w-full bg-gray-100 text-gray-400 text-sm font-bold py-2.5 rounded-xl cursor-not-allowed border border-gray-200";
+                btn.innerText = '⚡ Processed';
+            }
+            
+            // Pop up success summary
+            const summary = data.summary;
+            document.getElementById('summary-dept').innerText = summary.department;
+            document.getElementById('summary-batch').innerText = summary.batch;
+            document.getElementById('summary-semester').innerText = 'Semester ' + summary.semester;
+            document.getElementById('summary-students').innerText = summary.processed_students;
+            document.getElementById('summary-subjects').innerText = summary.processed_subjects;
+            document.getElementById('summary-passed').innerText = summary.passed_students;
+            document.getElementById('summary-failed').innerText = summary.failed_students;
+            document.getElementById('summary-duration').innerText = summary.duration;
+            document.getElementById('summary-start').innerText = summary.start_time;
+            document.getElementById('summary-end').innerText = summary.end_time;
+            
+            // Re-render summary blocks
+            document.getElementById('processing-steps-container').classList.add('hidden');
+            document.getElementById('processing-summary-container').classList.remove('hidden');
+            
+            document.getElementById('processing-cancel-btn').classList.add('hidden');
+            document.getElementById('processing-ok-btn').classList.remove('hidden');
+            
+            showToast('Result processing completed!', 'success');
+        }
+
+        // Start animation loop
+        runStepAnimation();
+    }
+
+    function closeProcessingModal() {
+        const modal = document.getElementById('processing-modal');
+        modal.classList.remove('opacity-100');
+        modal.querySelector('.bg-white').classList.add('scale-95');
+        modal.querySelector('.bg-white').classList.remove('scale-100');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+        clearAllAnimations();
+    }
+
+    function closeProcessingModalReload() {
+        closeProcessingModal();
+        location.reload();
+    }
+
+    let currentSubmissionSubjectId = null;
+
+    function openSubmissionModal() {
+        const modal = document.getElementById('submission-modal');
+        modal.classList.remove('hidden');
+        // Trigger reflow
+        modal.offsetHeight;
+        modal.classList.add('opacity-100');
+        modal.querySelector('.bg-white').classList.remove('scale-95');
+        modal.querySelector('.bg-white').classList.add('scale-100');
+    }
+
+    function closeSubmissionModal() {
+        const modal = document.getElementById('submission-modal');
+        modal.classList.remove('opacity-100');
+        modal.querySelector('.bg-white').classList.add('scale-95');
+        modal.querySelector('.bg-white').classList.remove('scale-100');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+
+    function closeSubmissionModalReload() {
+        closeSubmissionModal();
+        location.reload();
+    }
+
+    async function submitToAdmin(sid) {
+        const subjectId = sid || document.getElementById('exec_subject_id')?.value;
+        if(!subjectId) return showToast('Select a subject!', 'warning');
+
+        currentSubmissionSubjectId = subjectId;
+
+        // Reset views
+        document.getElementById('submission-confirm-view').classList.remove('hidden');
+        document.getElementById('submission-loading-view').classList.add('hidden');
+        document.getElementById('submission-success-view').classList.add('hidden');
+        
+        document.getElementById('submission-cancel-btn').classList.remove('hidden');
+        document.getElementById('submission-submit-btn').classList.remove('hidden');
+        document.getElementById('submission-ok-btn').classList.add('hidden');
+        
+        document.getElementById('submission-submit-btn').disabled = false;
+
+        // Show fetching message / disable submit button until metadata is loaded
+        document.getElementById('confirm-subject-name').innerText = "Loading...";
+        document.getElementById('confirm-subject-code').innerText = "Loading...";
+        document.getElementById('confirm-semester').innerText = "Loading...";
+        document.getElementById('confirm-department').innerText = "Loading...";
+        document.getElementById('confirm-batch').innerText = "Loading...";
+
+        openSubmissionModal();
 
         try {
-            const res = await fetch('/teacher/submit_results/' + sid, { method: 'POST' });
+            const res = await fetch('/teacher/submission_preview/' + subjectId);
             const data = await res.json();
-            showToast(data.message, data.success ? 'success' : 'error');
-            if(data.success) setTimeout(() => location.reload(), 1500);
+            if(!data.success) {
+                closeSubmissionModal();
+                showToast(data.message || 'Validation failed. Cannot submit.', 'error');
+                return;
+            }
+
+            document.getElementById('confirm-subject-name').innerText = data.subject_name;
+            document.getElementById('confirm-subject-code').innerText = data.subject_code;
+            document.getElementById('confirm-semester').innerText = data.semester;
+            document.getElementById('confirm-department').innerText = data.department;
+            document.getElementById('confirm-batch').innerText = data.batch;
         } catch(err) {
-            showToast('Request failed', 'error');
+            closeSubmissionModal();
+            showToast('Failed to load submission preview data.', 'error');
         }
     }
 
-    function exportResults() {
-        const sid = document.getElementById('exec_subject_id').value;
-        if(!sid) return showToast('Select a subject!', 'warning');
-        window.location.href = '/teacher/export_subject_results/' + sid;
+    async function executeSubmission() {
+        if(!currentSubmissionSubjectId) return;
+
+        // Disable submit button during submission
+        document.getElementById('submission-submit-btn').disabled = true;
+
+        // Transition to loading view
+        document.getElementById('submission-confirm-view').classList.add('hidden');
+        document.getElementById('submission-loading-view').classList.remove('hidden');
+        document.getElementById('submission-cancel-btn').classList.add('hidden');
+        document.getElementById('submission-submit-btn').classList.add('hidden');
+
+        try {
+            const res = await fetch('/teacher/submit_results/' + currentSubmissionSubjectId, { method: 'POST' });
+            const data = await res.json();
+
+            if(!data.success) {
+                // Revert to confirm view
+                document.getElementById('submission-confirm-view').classList.remove('hidden');
+                document.getElementById('submission-loading-view').classList.add('hidden');
+                document.getElementById('submission-cancel-btn').classList.remove('hidden');
+                document.getElementById('submission-submit-btn').classList.remove('hidden');
+                document.getElementById('submission-submit-btn').disabled = false;
+                
+                showToast(data.message || 'Submission failed.', 'error');
+                return;
+            }
+
+            // Show Success details
+            document.getElementById('success-semester').innerText = data.semester;
+            document.getElementById('success-department').innerText = data.department;
+            document.getElementById('success-subject').innerText = data.subject;
+            document.getElementById('success-submitted-by').innerText = data.submitted_by;
+            document.getElementById('success-time').innerText = data.submission_time;
+
+            document.getElementById('submission-loading-view').classList.add('hidden');
+            document.getElementById('submission-success-view').classList.remove('hidden');
+            
+            document.getElementById('submission-ok-btn').classList.remove('hidden');
+            
+            showToast('Results submitted successfully!', 'success');
+        } catch(err) {
+            // Revert to confirm view
+            document.getElementById('submission-confirm-view').classList.remove('hidden');
+            document.getElementById('submission-loading-view').classList.add('hidden');
+            document.getElementById('submission-cancel-btn').classList.remove('hidden');
+            document.getElementById('submission-submit-btn').classList.remove('hidden');
+            document.getElementById('submission-submit-btn').disabled = false;
+            
+            showToast('Network request failed.', 'error');
+        }
     }
 
-    function downloadErrors() {
-        const sid = document.getElementById('exec_subject_id').value;
-        if(!sid) return showToast('Select a subject!', 'warning');
-        window.location.href = '/teacher/error_report/' + sid;
+    function exportResults(sid) {
+        const subjectId = sid || document.getElementById('exec_subject_id')?.value;
+        if(!subjectId) return showToast('Select a subject!', 'warning');
+        window.location.href = '/teacher/export_subject_results/' + subjectId;
     }
+
+    function downloadErrors(sid) {
+        const subjectId = sid || document.getElementById('exec_subject_id')?.value;
+        if(!subjectId) return showToast('Select a subject!', 'warning');
+        window.location.href = '/teacher/error_report/' + subjectId;
+    }
+
+    async function unlockSubject(subjectId) {
+        if (!confirm('Are you sure you want to unlock this subject for editing? This will transition it back to DRAFT state.')) return;
+        try {
+            const res = await fetch(`/teacher/unlock_subject/${subjectId}`, { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(() => { window.location.reload(); }, 1000);
+            } else {
+                showToast(data.message || 'Failed to unlock subject.', 'error');
+            }
+        } catch(e) {
+            showToast('Network error, please try again.', 'error');
+        }
+    }
+
+    async function openHistoryModal(subjectId, subjectName) {
+        const modal = document.getElementById('history-modal');
+        const container = document.getElementById('history-timeline-container');
+        const loading = document.getElementById('history-loading');
+        
+        document.getElementById('history-modal-subtitle').innerText = subjectName;
+        container.innerHTML = "";
+        loading.classList.remove('hidden');
+        
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.querySelector('.transform').classList.remove('scale-95');
+        }, 10);
+        
+        try {
+            const res = await fetch(`/teacher/subject_history/${subjectId}`);
+            const data = await res.json();
+            loading.classList.add('hidden');
+            
+            if (data.success && data.history.length > 0) {
+                let html = "";
+                data.history.forEach((item, index) => {
+                    html += `
+                    <div class="relative">
+                        <!-- Bullet point -->
+                        <span class="absolute -left-9 top-1.5 bg-blue-500 w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-black shadow-sm ring-4 ring-white">
+                            ${data.history.length - index}
+                        </span>
+                        <div>
+                            <div class="flex items-center justify-between text-xs text-gray-400 font-bold mb-1">
+                                <span class="text-gray-700">${item.user}</span>
+                                <span>${item.timestamp}</span>
+                            </div>
+                            <p class="text-xs font-black text-indigo-600 mb-1">${item.transition}</p>
+                            ${item.comments ? `<p class="text-xs text-gray-500 bg-gray-50 p-2 rounded-lg border border-gray-100 font-medium leading-snug">${item.comments}</p>` : ''}
+                        </div>
+                    </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = `<p class="text-xs text-gray-500 italic text-center py-4">No audit logs found for this subject.</p>`;
+            }
+        } catch(e) {
+            loading.classList.add('hidden');
+            container.innerHTML = `<p class="text-xs text-red-500 italic text-center py-4">Failed to load history.</p>`;
+        }
+    }
+
+    function closeHistoryModal() {
+        const modal = document.getElementById('history-modal');
+        modal.classList.add('opacity-0');
+        modal.querySelector('.transform').classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+
 
     // ── Time-based greeting ─────────────────────────────────────────────────
     function setGreeting() {

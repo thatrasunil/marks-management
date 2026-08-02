@@ -1,113 +1,417 @@
 {% extends 'base.html' %}
-{% block title %}Result - {{ student.name }}{% endblock %}
+{% block title %}Provisional Marks Memo - {{ student.name }}{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto py-10 px-4">
-    <div class="flex justify-between items-center mb-8">
-        <div class="flex items-center space-x-3">
-            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AITS Logo" class="h-12 w-12 rounded shadow-sm">
-            <h1 class="text-2xl font-heading font-bold text-primary">AITS Results</h1>
-        </div>
-        <a href="/"
-            class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium text-sm">
-            ← Check Another
-        </a>
-    </div>
+<!-- Custom styles for University Marks Memo (A4 format, print layouts, watermarks, etc) -->
+<style>
+    /* Styling for provisional watermark */
+    .watermark-container {
+        position: relative;
+        overflow: hidden;
+    }
+    .watermark {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-30deg);
+        font-size: 5rem;
+        font-weight: 900;
+        color: rgba(226, 232, 240, 0.35);
+        pointer-events: none;
+        user-select: none;
+        white-space: nowrap;
+        z-index: 0;
+        font-family: 'Poppins', sans-serif;
+        letter-spacing: 0.5rem;
+    }
+    
+    /* Document border line styles */
+    .memo-border {
+        border: 2px solid #1e3a5f;
+        padding: 4px;
+        position: relative;
+    }
+    .memo-inner-border {
+        border: 1px double #1e3a5f;
+        padding: 24px;
+    }
 
-    <!-- Student Detail Card -->
-    <div
-        class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8 flex flex-col md:flex-row justify-between items-center">
-        <div>
-            <h2 class="text-3xl font-bold text-gray-800">{{ student.name }}</h2>
-            <div class="flex items-center space-x-4 mt-2 text-gray-500 font-medium">
-                <span class="flex items-center"><svg class="w-4 h-4 mr-1 text-primary" fill="currentColor"
-                        viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                            clip-rule="evenodd"></path>
-                    </svg> {{ student.roll_no }}</span>
-                <span class="flex items-center bg-blue-50 text-primary px-3 py-1 rounded-full text-sm">
-                    Semester {{ result.semester }}
-                </span>
-            </div>
-        </div>
+    /* Print media styling rules */
+    @media print {
+        body {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            font-size: 11px !important;
+        }
+        
+        /* Hide everything except the printable marks memo */
+        .no-print, 
+        header, 
+        footer,
+        #toast-container,
+        .fixed {
+            display: none !important;
+        }
+        
+        .print-container {
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+            max-width: 100% !important;
+            width: 100% !important;
+        }
 
-        <div class="mt-4 md:mt-0 flex space-x-4">
-            <div class="bg-gray-50 border border-gray-100 px-6 py-4 rounded-xl text-center">
-                <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">SGPA</p>
-                <p
-                    class="text-4xl font-black {% if result.sgpa >= 8.0 %}text-success{% elif result.sgpa >= 6.0 %}text-secondary{% else %}text-error{% endif %}">
-                    {{ result.sgpa }}</p>
-            </div>
+        .memo-border {
+            border: 2px solid #000000 !important;
+            padding: 2px !important;
+        }
+        
+        .memo-inner-border {
+            border: 1px solid #000000 !important;
+            padding: 15px !important;
+        }
 
-            <div class="bg-gray-50 border border-gray-100 px-6 py-4 rounded-xl text-center">
-                <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">CGPA</p>
-                <p
-                    class="text-4xl font-black {% if result.cgpa >= 8.0 %}text-success{% elif result.cgpa >= 6.0 %}text-secondary{% else %}text-error{% endif %}">
-                    {{ result.cgpa }}</p>
-            </div>
+        /* Enforce page settings */
+        @page {
+            size: A4;
+            margin: 15mm 15mm 15mm 15mm;
+        }
 
-            <div class="bg-gray-50 border border-gray-100 px-6 py-4 rounded-xl text-center">
-                <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Status</p>
-                {% set ns = namespace(failed=false) %}
-                {% for mark in marks %}
-                {% if mark.grade == 'F' %}{% set ns.failed = true %}{% endif %}
-                {% endfor %}
+        /* Ensure backgrounds can print */
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
 
-                {% if ns.failed %}
-                <p class="text-2xl font-black text-error mt-2">FAIL</p>
-                {% else %}
-                <p class="text-2xl font-black text-success mt-2">PASS</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
+        /* Force high contrast for printing */
+        .text-success { color: #047857 !important; }
+        .text-error { color: #b91c1c !important; }
+        .bg-gray-50 { background-color: #f9fafb !important; }
+        .bg-primary { background-color: #1e3a5f !important; color: #ffffff !important; }
+        
+        /* Prevent table row splitting */
+        tr {
+            page-break-inside: avoid !important;
+            page-break-after: auto !important;
+        }
+    }
+</style>
 
-    <!-- Marks Table -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <table class="w-full text-left border-collapse">
-            <thead>
-                <tr class="bg-primary text-white text-sm uppercase tracking-wider">
-                    <th class="p-4 font-semibold">Subject Name</th>
-                    <th class="p-4 font-semibold text-center">Internal (30)</th>
-                    <th class="p-4 font-semibold text-center">External (70)</th>
-                    <th class="p-4 font-semibold text-center">Total (100)</th>
-                    <th class="p-4 font-semibold text-center">Grade</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100 text-gray-700">
-                {% for mark in marks %}
-                <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="p-4 font-medium">{{ mark.subject.name }} <span class="text-xs text-gray-400 block">{{
-                            mark.subject.code }}</span></td>
-                    <td class="p-4 text-center">{{ mark.internal }}</td>
-                    <td class="p-4 text-center">{{ mark.external }}</td>
-                    <td class="p-4 text-center font-bold">{{ mark.total }}</td>
-                    <td class="p-4 text-center">
-                        <span class="inline-flex items-center justify-center px-3 py-1 text-sm font-bold rounded-full 
-                        {% if mark.grade in ['O', 'A+', 'A'] %} bg-green-100 text-green-800
-                        {% elif mark.grade in ['B+', 'B'] %} bg-blue-100 text-blue-800
-                        {% elif mark.grade == 'C' %} bg-orange-100 text-orange-800
-                        {% else %} bg-red-100 text-red-800 {% endif %}">
-                            {{ mark.grade }}
-                        </span>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <div class="mt-8 text-center text-sm text-gray-400">
-        <p>This is a computer-generated document. For official purposes, please refer to the original marks memo.</p>
-        <button onclick="window.print()"
-            class="mt-4 px-6 py-2 bg-primary text-white rounded-lg hover:bg-gray-800 transition-colors inline-flex items-center">
+<div class="max-w-5xl mx-auto py-10 px-4 print-container">
+    
+    <!-- Action Bar / Back Navigation -->
+    <div class="flex justify-between items-center mb-6 no-print">
+        <a href="{{ url_for('student_dashboard') }}"
+            class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-bold text-sm">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z">
-                </path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
             </svg>
-            Print Result
-        </button>
+            Back to Dashboard
+        </a>
+        <div class="flex gap-3">
+            <button onclick="window.print()"
+                class="px-5 py-2 bg-primary hover:bg-blue-900 text-white rounded-lg transition-all font-bold text-sm shadow-md flex items-center gap-2 transform hover:-translate-y-0.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                </svg>
+                Print Result
+            </button>
+            <button onclick="triggerPDFDownload()"
+                class="px-5 py-2 bg-success hover:bg-emerald-600 text-white rounded-lg transition-all font-bold text-sm shadow-md flex items-center gap-2 transform hover:-translate-y-0.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                Download Marks Memo
+            </button>
+        </div>
     </div>
+
+    {% if not is_released %}
+    <!-- Friendly message if results not released -->
+    <div class="bg-white rounded-2xl border border-amber-200 p-10 text-center shadow-md max-w-lg mx-auto mt-10 no-print-margin">
+        <div class="w-16 h-16 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center mx-auto mb-4 border border-amber-100">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">Results Not Released</h2>
+        <p class="text-gray-500 font-medium leading-relaxed mb-4">Your examination results have not yet been released.</p>
+        <p class="text-sm text-gray-400">Please contact the examinations branch or check back later.</p>
+    </div>
+    {% elif not marks %}
+    <!-- Meaningful Empty State if no subjects mapped/exist -->
+    <div class="bg-white rounded-2xl border border-gray-200 p-10 text-center shadow-md max-w-lg mx-auto mt-10 no-print-margin">
+        <div class="w-16 h-16 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center mx-auto mb-4 border border-gray-100">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">No Records Found</h2>
+        <p class="text-gray-500 font-medium mb-4">There are no subjects or grades registered for your roll number in this semester.</p>
+        <p class="text-sm text-gray-400">If you believe this is an error, please reach out to your department coordinator.</p>
+    </div>
+    {% else %}
+    <!-- Printable University Marks Memo Frame -->
+    <div class="bg-white shadow-xl rounded-sm watermark-container memo-border">
+        <div class="watermark">PROVISIONAL</div>
+        
+        <div class="memo-inner-border relative z-10">
+            
+            <!-- 1. UNIVERSITY HEADER -->
+            <div class="flex flex-col sm:flex-row items-center justify-between pb-6 border-b-2 border-primary mb-6 gap-4 text-center sm:text-left">
+                <div class="flex flex-col sm:flex-row items-center gap-4">
+                    <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Institution Logo" class="h-20 w-20 rounded shadow-sm border border-gray-200 object-cover">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-black font-heading tracking-tight text-primary leading-tight uppercase">
+                            Annamacharya Institute of Technology and Sciences
+                        </h2>
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-widest mt-0.5">
+                            Autonomous Institution • Approved by AICTE • Affiliated to JNTUA
+                        </p>
+                        <h3 class="text-sm sm:text-base font-bold text-secondary mt-1.5 uppercase tracking-wide">
+                            Department of {{ department }}
+                        </h3>
+                    </div>
+                </div>
+                
+                <div class="text-center sm:text-right flex flex-col items-center sm:items-end justify-center">
+                    <span class="bg-primary text-white text-[10px] font-extrabold px-3 py-1 rounded uppercase tracking-wider mb-2">
+                        OFFICIAL RELEASE
+                    </span>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase">Exam Session</p>
+                    <p class="text-xs sm:text-sm font-extrabold text-gray-800">{{ academic_year }}</p>
+                </div>
+            </div>
+
+            <div class="text-center mb-6">
+                <h4 class="text-base sm:text-lg font-black text-gray-800 tracking-wider uppercase border-b border-gray-200 pb-1.5 inline-block px-8">
+                    Provisional Statement of Grades
+                </h4>
+                <p class="text-[11px] text-gray-500 font-bold tracking-wider mt-1 uppercase">
+                    B.Tech Semester {{ student.semester }} Regular Examinations
+                </p>
+            </div>
+
+            <!-- 2. STUDENT INFORMATION GRID -->
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-xs sm:text-sm">
+                <div class="flex border-b border-gray-100 pb-1.5 md:border-none md:pb-0">
+                    <span class="w-36 font-bold text-gray-500 uppercase text-[10px] tracking-wider">Student Name:</span>
+                    <span class="font-extrabold text-gray-800 uppercase">{{ student.name }}</span>
+                </div>
+                <div class="flex border-b border-gray-100 pb-1.5 md:border-none md:pb-0">
+                    <span class="w-36 font-bold text-gray-500 uppercase text-[10px] tracking-wider">Hall Ticket No:</span>
+                    <span class="font-black text-primary tracking-wider">{{ student.roll_no }}</span>
+                </div>
+                <div class="flex border-b border-gray-100 pb-1.5 md:border-none md:pb-0">
+                    <span class="w-36 font-bold text-gray-500 uppercase text-[10px] tracking-wider">Department:</span>
+                    <span class="font-bold text-gray-700 uppercase">{{ department }}</span>
+                </div>
+                <div class="flex border-b border-gray-100 pb-1.5 md:border-none md:pb-0">
+                    <span class="w-36 font-bold text-gray-500 uppercase text-[10px] tracking-wider">Branch:</span>
+                    <span class="font-bold text-gray-700 uppercase">{{ branch }}</span>
+                </div>
+                <div class="flex border-b border-gray-100 pb-1.5 md:border-none md:pb-0">
+                    <span class="w-36 font-bold text-gray-500 uppercase text-[10px] tracking-wider">Semester:</span>
+                    <span class="font-bold text-gray-700">Semester {{ student.semester }}</span>
+                </div>
+                <div class="flex border-b border-gray-100 pb-1.5 md:border-none md:pb-0">
+                    <span class="w-36 font-bold text-gray-500 uppercase text-[10px] tracking-wider">Intake Batch:</span>
+                    <span class="font-bold text-gray-700">{{ student.batch }}</span>
+                </div>
+                <div class="flex md:col-span-2">
+                    <span class="w-36 font-bold text-gray-500 uppercase text-[10px] tracking-wider">Academic Year:</span>
+                    <span class="font-bold text-gray-700">{{ academic_year }}</span>
+                </div>
+            </div>
+
+            <!-- 3. SUBJECT TABLE -->
+            <div class="border border-gray-200 rounded-lg overflow-hidden mb-6 shadow-sm overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs min-w-[600px]">
+                    <thead>
+                        <tr class="bg-primary text-white uppercase tracking-wider text-[10px]">
+                            <th class="p-3 font-bold border-r border-blue-900/50">Subject Code</th>
+                            <th class="p-3 font-bold border-r border-blue-900/50">Subject Name</th>
+                            <th class="p-3 font-bold text-center border-r border-blue-900/50 w-20">Credits</th>
+                            <th class="p-3 font-bold text-center border-r border-blue-900/50 w-20">Internal</th>
+                            <th class="p-3 font-bold text-center border-r border-blue-900/50 w-20">External</th>
+                            <th class="p-3 font-bold text-center border-r border-blue-900/50 w-20">Total</th>
+                            <th class="p-3 font-bold text-center border-r border-blue-900/50 w-20">Grade</th>
+                            <th class="p-3 font-bold text-center border-r border-blue-900/50 w-24">Grade Point</th>
+                            <th class="p-3 font-bold text-center w-24">Result</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 text-gray-700 font-medium">
+                        {% for mark in marks %}
+                        <tr class="hover:bg-gray-50/30 transition-colors">
+                            <td class="p-2.5 border-r border-gray-200 font-bold text-gray-900">{{ mark.subject.code }}</td>
+                            <td class="p-2.5 border-r border-gray-200 font-semibold text-gray-800">{{ mark.subject.name }}</td>
+                            <td class="p-2.5 text-center border-r border-gray-200 font-bold text-gray-800">{{ mark.subject.credits }}</td>
+                            <td class="p-2.5 text-center border-r border-gray-200 text-gray-600">{{ mark.internal }}</td>
+                            <td class="p-2.5 text-center border-r border-gray-200 text-gray-600">{{ mark.external }}</td>
+                            <td class="p-2.5 text-center border-r border-gray-200 font-extrabold text-gray-900">{{ mark.total }}</td>
+                            <td class="p-2.5 text-center border-r border-gray-200 font-black">
+                                <span class="px-2 py-0.5 rounded text-xs
+                                {% if mark.grade in ['O', 'A+', 'A'] %} text-green-700 bg-green-50
+                                {% elif mark.grade in ['B+', 'B'] %} text-blue-700 bg-blue-50
+                                {% elif mark.grade == 'C' %} text-yellow-700 bg-yellow-50
+                                {% else %} text-red-700 bg-red-50 {% endif %}">
+                                    {{ mark.grade }}
+                                </span>
+                            </td>
+                            <td class="p-2.5 text-center border-r border-gray-200 font-black text-gray-800">{{ mark.grade_point }}</td>
+                            <td class="p-2.5 text-center font-black">
+                                {% if mark.grade_point > 0 %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold bg-green-100 text-green-800 uppercase tracking-wider">PASS</span>
+                                {% else %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold bg-red-100 text-red-800 uppercase tracking-wider">FAIL</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 4. ACADEMIC SUMMARY CARDS & GRADES STATS -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg flex flex-col justify-between shadow-sm">
+                    <span class="text-[10px] text-gray-400 font-black uppercase tracking-wider">Semester SGPA</span>
+                    <span class="text-2xl font-black mt-2 text-primary leading-none">{{ result.sgpa }}</span>
+                    <span class="text-[10px] text-gray-500 font-bold mt-1">Weighted Average</span>
+                </div>
+                
+                <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg flex flex-col justify-between shadow-sm">
+                    <span class="text-[10px] text-gray-400 font-black uppercase tracking-wider">Cumulative CGPA</span>
+                    <span class="text-2xl font-black mt-2 text-primary leading-none">
+                        {% if result.cgpa %}{{ result.cgpa }}{% else %}N/A{% endif %}
+                    </span>
+                    <span class="text-[10px] text-gray-500 font-bold mt-1">Aggregated Value</span>
+                </div>
+
+                <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg flex flex-col justify-between shadow-sm">
+                    <span class="text-[10px] text-gray-400 font-black uppercase tracking-wider">Credits (Reg / Earn)</span>
+                    <div class="flex items-baseline gap-1 mt-2">
+                        <span class="text-2xl font-black text-primary leading-none">{{ result.credits_registered }}</span>
+                        <span class="text-gray-400 font-semibold text-sm">/</span>
+                        <span class="text-xl font-extrabold text-success leading-none">{{ result.credits_earned }}</span>
+                    </div>
+                    <span class="text-[10px] text-gray-500 font-bold mt-1">Completion: {{ "%.0f"|format((result.credits_earned/result.credits_registered)*100) if result.credits_registered > 0 else 0 }}%</span>
+                </div>
+
+                <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg flex flex-col justify-between shadow-sm">
+                    <span class="text-[10px] text-gray-400 font-black uppercase tracking-wider">Course Summary</span>
+                    <div class="flex items-center justify-between mt-2">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] text-gray-500 font-bold">Total Subjects: {{ total_subjects }}</span>
+                            <span class="text-[10px] text-success font-extrabold">Passed: {{ passed_subjects }}</span>
+                            <span class="text-[10px] text-error font-extrabold">Failed: {{ failed_subjects }}</span>
+                        </div>
+                        <div class="px-2.5 py-1.5 rounded flex flex-col items-center justify-center 
+                            {% if overall_result == 'PASS' %} bg-green-50 border border-green-200 text-success
+                            {% else %} bg-red-50 border border-red-200 text-error {% endif %}">
+                            <span class="text-[8px] uppercase tracking-wider font-extrabold">Status</span>
+                            <span class="text-xs font-black">{{ overall_result }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. SIGNATURES AND QR CODE FOOTER -->
+            <div class="border-t border-gray-200 pt-6 mt-6 flex flex-col md:flex-row items-center justify-between gap-6">
+                <!-- Barcode & Date -->
+                <div class="flex flex-col items-center md:items-start text-center md:text-left">
+                    <div class="flex items-center gap-3 bg-gray-100 px-3 py-2 rounded border border-gray-200 mb-2">
+                        <!-- Modern Visual Mock Barcode using simple CSS lines -->
+                        <div class="flex items-center gap-0.5 select-none">
+                            <div class="w-[1.5px] h-5 bg-gray-800"></div>
+                            <div class="w-[3px] h-5 bg-gray-800"></div>
+                            <div class="w-[1.5px] h-5 bg-gray-800"></div>
+                            <div class="w-[1.5px] h-5 bg-gray-800"></div>
+                            <div class="w-[2px] h-5 bg-gray-800"></div>
+                            <div class="w-[1.5px] h-5 bg-gray-700"></div>
+                            <div class="w-[3px] h-5 bg-gray-800"></div>
+                            <div class="w-[1.5px] h-5 bg-gray-800"></div>
+                            <div class="w-[2px] h-5 bg-gray-800"></div>
+                            <div class="w-[1.5px] h-5 bg-gray-800"></div>
+                        </div>
+                        <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest">{{ student.roll_no }}</span>
+                    </div>
+                    <p class="text-[9px] font-bold text-gray-400 uppercase">Generated Date</p>
+                    <p class="text-xs font-bold text-gray-700">{{ generated_date }}</p>
+                    <p class="text-[9px] text-gray-400 font-medium mt-1 leading-normal">Result Status: <span class="font-extrabold text-success uppercase">RELEASED (OFFICIAL)</span></p>
+                </div>
+                
+                <!-- Mock QR Code Box -->
+                <div class="flex items-center gap-3 bg-gray-50 p-2.5 rounded-lg border border-gray-200 max-w-xs">
+                    <!-- Placeholder QR code icon -->
+                    <div class="w-12 h-12 bg-gray-200 shrink-0 border border-gray-300 flex items-center justify-center relative overflow-hidden select-none">
+                        <div class="absolute inset-0.5 border border-gray-800 flex flex-wrap justify-between p-0.5 bg-white">
+                            <div class="w-3 h-3 border border-gray-800 bg-white"></div>
+                            <div class="w-3 h-3 border border-gray-800 bg-white"></div>
+                            <div class="w-3 h-3 border border-gray-800 bg-white"></div>
+                            <div class="w-full flex justify-between gap-0.5 mt-0.5">
+                                <div class="w-2 h-2 bg-gray-800"></div>
+                                <div class="w-1 h-1 bg-gray-800"></div>
+                                <div class="w-2 h-2 bg-gray-800"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-[9px] text-gray-500 leading-tight">
+                        <p class="font-extrabold text-gray-700 uppercase mb-0.5">Verification QR Code</p>
+                        <p>Scan to verify student identities and grades against official JNTUA/AITS databases.</p>
+                    </div>
+                </div>
+
+                <!-- Signatures -->
+                <div class="flex gap-6 text-center text-xs pt-4 md:pt-0">
+                    <div class="flex flex-col items-center">
+                        <div class="h-8 w-24 border-b border-gray-400 flex items-end justify-center pb-1">
+                            <span class="text-[8px] font-serif italic text-gray-400 select-none">Computer Gen</span>
+                        </div>
+                        <span class="text-[9px] font-black text-gray-500 uppercase tracking-wider mt-1">Prepared By</span>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <div class="h-8 w-24 border-b border-gray-400 flex items-end justify-center pb-1">
+                            <span class="text-[8px] font-serif italic text-gray-450 select-none">Verified OK</span>
+                        </div>
+                        <span class="text-[9px] font-black text-gray-500 uppercase tracking-wider mt-1">Checked By</span>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <div class="h-8 w-24 border-b border-gray-400 flex items-end justify-center pb-1">
+                            <!-- Controller Signature Placeholder -->
+                            <span class="text-[9px] font-serif italic text-gray-700 select-none font-bold">Dr. K. Srinivas</span>
+                        </div>
+                        <span class="text-[9px] font-black text-primary uppercase tracking-wider mt-1">Controller of Exams</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Disclaimer -->
+            <div class="border-t border-gray-100 pt-4 mt-6 text-center text-[9px] text-gray-400 leading-normal">
+                <p class="font-bold uppercase tracking-wider text-gray-500 mb-0.5">Important Disclaimer</p>
+                <p>This is a computer-generated Provisional Marks Memo. The grades published above are official at the time of publication. However, for any legal or official verification, please refer to the original physical marks memo issued by the Office of the Controller of Examinations, Annamacharya Institute of Technology and Sciences.</p>
+            </div>
+
+        </div>
+    </div>
+    {% endif %}
 </div>
+
+<!-- Helper script to trigger PDF print dialog -->
+<script>
+    function triggerPDFDownload() {
+        window.print();
+    }
+    
+    // Auto-trigger print if URL contains download=true parameter
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('download') === 'true') {
+            setTimeout(() => {
+                window.print();
+            }, 300);
+        }
+    }
+</script>
 {% endblock %}

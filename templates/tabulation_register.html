@@ -1,0 +1,578 @@
+{% extends 'base.html' %}
+
+{% block title %}Tabulation Register - Admin Portal{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-50 text-slate-800 pb-12">
+    <!-- Top Institutional Banner -->
+    <header class="bg-gradient-to-r from-slate-900 via-primary to-slate-900 text-white shadow-lg sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-blue-600 rounded-lg shadow-md">
+                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0V12m0 0V5" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-heading font-bold tracking-wide uppercase">Annamacharya Institute of Technology and Sciences, Tirupati</h1>
+                    <p class="text-xs text-blue-200 font-medium">Official University Tabulation Register (TR) System</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <a href="{{ url_for('admin_dashboard') }}" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg transition-colors border border-slate-700 flex items-center gap-1.5 shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    Admin Dashboard
+                </a>
+                <button id="btn-export-excel" onclick="exportExcel()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 shadow-md">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Export Excel (.xlsx)
+                </button>
+                <button id="btn-print-tr" onclick="printTR()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 shadow-md">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                    Print Register
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+        <!-- 1. Primary Filter Panel -->
+        <div class="bg-white rounded-xl shadow-md p-5 border border-slate-200">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                    <h2 class="font-heading font-semibold text-slate-800 text-sm tracking-wide uppercase">Tabulation Register Cohort Filters</h2>
+                </div>
+                <span class="text-xs px-2.5 py-1 bg-amber-50 text-amber-700 font-medium rounded-full border border-amber-200">Includes Released Results Only</span>
+            </div>
+
+            <form id="filter-form" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 text-xs">
+                <!-- Semester -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Semester</label>
+                    <select id="filter-semester" name="semester" onchange="fetchTRData()" class="w-full rounded-md border-slate-300 shadow-sm focus:border-secondary focus:ring-secondary py-1.5 text-xs">
+                        {% for sem in filter_options.semesters %}
+                        <option value="{{ sem }}" {% if current_filters.semester == sem %}selected{% endif %}>Semester {{ sem }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <!-- Academic Year -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Academic Year</label>
+                    <select id="filter-academic-year" name="academic_year" onchange="fetchTRData()" class="w-full rounded-md border-slate-300 shadow-sm focus:border-secondary focus:ring-secondary py-1.5 text-xs">
+                        <option value="ALL">ALL Academic Years</option>
+                        {% for ay in filter_options.academic_years %}
+                        <option value="{{ ay }}" {% if current_filters.academic_year == ay %}selected{% endif %}>{{ ay }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <!-- Department -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Department</label>
+                    <select id="filter-department" name="department" onchange="fetchTRData()" class="w-full rounded-md border-slate-300 shadow-sm focus:border-secondary focus:ring-secondary py-1.5 text-xs">
+                        <option value="ALL">ALL Departments</option>
+                        {% for dept in filter_options.departments %}
+                        <option value="{{ dept }}" {% if current_filters.department == dept %}selected{% endif %}>{{ dept }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <!-- Branch -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Branch</label>
+                    <select id="filter-branch" name="branch" onchange="fetchTRData()" class="w-full rounded-md border-slate-300 shadow-sm focus:border-secondary focus:ring-secondary py-1.5 text-xs">
+                        <option value="ALL">ALL Branches</option>
+                        {% for br in filter_options.branches %}
+                        <option value="{{ br }}" {% if current_filters.branch == br %}selected{% endif %}>{{ br }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <!-- Batch -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Batch</label>
+                    <select id="filter-batch" name="batch" onchange="fetchTRData()" class="w-full rounded-md border-slate-300 shadow-sm focus:border-secondary focus:ring-secondary py-1.5 text-xs">
+                        <option value="ALL">ALL Batches</option>
+                        {% for bat in filter_options.batches %}
+                        <option value="{{ bat }}" {% if current_filters.batch == bat %}selected{% endif %}>{{ bat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <!-- Section -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Section</label>
+                    <select id="filter-section" name="section" onchange="fetchTRData()" class="w-full rounded-md border-slate-300 shadow-sm focus:border-secondary focus:ring-secondary py-1.5 text-xs">
+                        {% for sec in filter_options.sections %}
+                        <option value="{{ sec }}" {% if current_filters.section == sec %}selected{% endif %}>{{ sec }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <!-- Exam Type -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Exam Type</label>
+                    <select id="filter-exam-type" name="exam_type" onchange="fetchTRData()" class="w-full rounded-md border-slate-300 shadow-sm focus:border-secondary focus:ring-secondary py-1.5 text-xs">
+                        {% for et in filter_options.exam_types %}
+                        <option value="{{ et }}" {% if current_filters.exam_type == et %}selected{% endif %}>{{ et }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </div>
+
+        <!-- 2. Search, Multi-field Filters & Sorting Toolbar -->
+        <div class="bg-white rounded-xl shadow-md p-4 border border-slate-200 mt-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+                <!-- Search -->
+                <div class="lg:col-span-2 relative">
+                    <label class="block font-semibold text-slate-700 mb-1">Search Student</label>
+                    <div class="relative">
+                        <input type="text" id="search-input" onkeyup="debounceFetch()" placeholder="Search by Hall Ticket or Name..." value="{{ current_filters.search }}" class="w-full pl-8 pr-3 py-1.5 rounded-md border-slate-300 shadow-sm focus:border-secondary focus:ring-secondary text-xs">
+                        <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </div>
+                </div>
+
+                <!-- Result Status -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Overall Result</label>
+                    <select id="filter-pass-fail" onchange="fetchTRData()" class="w-full rounded-md border-slate-300 shadow-sm focus:border-secondary focus:ring-secondary py-1.5 text-xs">
+                        <option value="ALL">ALL Results</option>
+                        <option value="PASS" {% if current_filters.pass_fail == 'PASS' %}selected{% endif %}>PASS Only</option>
+                        <option value="FAIL" {% if current_filters.pass_fail == 'FAIL' %}selected{% endif %}>FAIL Only</option>
+                    </select>
+                </div>
+
+                <!-- Grade Filter -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Subject Grade</label>
+                    <select id="filter-grade" onchange="fetchTRData()" class="w-full rounded-md border-slate-300 shadow-sm focus:border-secondary focus:ring-secondary py-1.5 text-xs">
+                        <option value="ALL">ALL Grades</option>
+                        <option value="A+" {% if current_filters.grade_filter == 'A+' %}selected{% endif %}>A+ (90-100)</option>
+                        <option value="A" {% if current_filters.grade_filter == 'A' %}selected{% endif %}>A (80-89)</option>
+                        <option value="B" {% if current_filters.grade_filter == 'B' %}selected{% endif %}>B (70-79)</option>
+                        <option value="C" {% if current_filters.grade_filter == 'C' %}selected{% endif %}>C (60-69)</option>
+                        <option value="D" {% if current_filters.grade_filter == 'D' %}selected{% endif %}>D (50-59)</option>
+                        <option value="E" {% if current_filters.grade_filter == 'E' %}selected{% endif %}>E (40-49)</option>
+                        <option value="F" {% if current_filters.grade_filter == 'F' %}selected{% endif %}>F (<40)</option>
+                    </select>
+                </div>
+
+                <!-- Sort Field & Direction -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Sort Field</label>
+                    <select id="sort-by" onchange="fetchTRData()" class="w-full rounded-md border-slate-300 shadow-sm focus:border-secondary focus:ring-secondary py-1.5 text-xs">
+                        <option value="roll_no" {% if current_filters.sort_by == 'roll_no' %}selected{% endif %}>Hall Ticket</option>
+                        <option value="name" {% if current_filters.sort_by == 'name' %}selected{% endif %}>Student Name</option>
+                        <option value="sgpa" {% if current_filters.sort_by == 'sgpa' %}selected{% endif %}>SGPA</option>
+                        <option value="cgpa" {% if current_filters.sort_by == 'cgpa' %}selected{% endif %}>CGPA</option>
+                        <option value="percentage" {% if current_filters.sort_by == 'percentage' %}selected{% endif %}>Percentage</option>
+                        <option value="total_marks" {% if current_filters.sort_by == 'total_marks' %}selected{% endif %}>Total Marks</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Order</label>
+                    <select id="sort-dir" onchange="fetchTRData()" class="w-full rounded-md border-slate-300 shadow-sm focus:border-secondary focus:ring-secondary py-1.5 text-xs">
+                        <option value="asc" {% if current_filters.sort_dir == 'asc' %}selected{% endif %}>Ascending (A-Z, 0-9)</option>
+                        <option value="desc" {% if current_filters.sort_dir == 'desc' %}selected{% endif %}>Descending (Z-A, 9-0)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <!-- Ranges -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="flex items-center gap-1.5">
+                        <span class="font-semibold text-slate-600">SGPA:</span>
+                        <input type="number" step="0.1" min="0" max="10" id="min-sgpa" onchange="fetchTRData()" placeholder="Min" value="{{ current_filters.min_sgpa }}" class="w-16 rounded border-slate-300 py-1 text-xs">
+                        <span>-</span>
+                        <input type="number" step="0.1" min="0" max="10" id="max-sgpa" onchange="fetchTRData()" placeholder="Max" value="{{ current_filters.max_sgpa }}" class="w-16 rounded border-slate-300 py-1 text-xs">
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="font-semibold text-slate-600">Pct (%):</span>
+                        <input type="number" step="1" min="0" max="100" id="min-pct" onchange="fetchTRData()" placeholder="Min" value="{{ current_filters.min_pct }}" class="w-16 rounded border-slate-300 py-1 text-xs">
+                        <span>-</span>
+                        <input type="number" step="1" min="0" max="100" id="max-pct" onchange="fetchTRData()" placeholder="Max" value="{{ current_filters.max_pct }}" class="w-16 rounded border-slate-300 py-1 text-xs">
+                    </div>
+                </div>
+
+                <!-- Reset -->
+                <button onclick="resetFilters()" class="text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded transition-colors flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    Reset Filters
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. Summary Statistics Cards -->
+        <div id="summary-cards" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-4">
+            <!-- Total Students -->
+            <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-200">
+                <div class="text-xs text-slate-500 font-medium">Total Registered</div>
+                <div class="text-xl font-bold text-slate-800 mt-1" id="stat-total">{{ tr_data.summary.total_students }}</div>
+                <div class="text-[10px] text-slate-400 mt-0.5" id="stat-appeared">Appeared: {{ tr_data.summary.appeared }}</div>
+            </div>
+            <!-- Passed -->
+            <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-200">
+                <div class="text-xs text-emerald-600 font-medium">Passed Students</div>
+                <div class="text-xl font-bold text-emerald-700 mt-1" id="stat-passed">{{ tr_data.summary.passed }}</div>
+                <div class="text-[10px] text-emerald-500 mt-0.5" id="stat-pass-pct">Pass Rate: {{ tr_data.summary.pass_percentage }}%</div>
+            </div>
+            <!-- Failed -->
+            <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-200">
+                <div class="text-xs text-red-600 font-medium">Failed Students</div>
+                <div class="text-xl font-bold text-red-700 mt-1" id="stat-failed">{{ tr_data.summary.failed }}</div>
+                <div class="text-[10px] text-red-500 mt-0.5">Need Backlog Clear</div>
+            </div>
+            <!-- Pass % Bar -->
+            <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-200">
+                <div class="text-xs text-slate-500 font-medium">Pass Percentage</div>
+                <div class="text-xl font-bold text-blue-600 mt-1" id="stat-pass-rate">{{ tr_data.summary.pass_percentage }}%</div>
+                <div class="w-full bg-slate-100 rounded-full h-1.5 mt-2">
+                    <div id="stat-pass-bar" class="bg-blue-600 h-1.5 rounded-full" style="width: 0%;"></div>
+                </div>
+            </div>
+            <!-- SGPA Metrics -->
+            <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-200">
+                <div class="text-xs text-slate-500 font-medium">SGPA (High / Avg / Low)</div>
+                <div class="text-sm font-bold text-slate-800 mt-1" id="stat-sgpa-range">{{ tr_data.summary.highest_sgpa }} / {{ tr_data.summary.average_sgpa }} / {{ tr_data.summary.lowest_sgpa }}</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">Scale: 10.0</div>
+            </div>
+            <!-- Pct Metrics -->
+            <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-200">
+                <div class="text-xs text-slate-500 font-medium">Percentage Range</div>
+                <div class="text-sm font-bold text-slate-800 mt-1" id="stat-pct-range">{{ tr_data.summary.highest_percentage }}% - {{ tr_data.summary.lowest_percentage }}%</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">Marks Scale: 100</div>
+            </div>
+        </div>
+
+        <!-- 4. Main Tabulation Register Data Grid -->
+        <div class="bg-white rounded-xl shadow-md border border-slate-200 mt-4 overflow-hidden relative">
+            <!-- Loading Overlay -->
+            <div id="loading-overlay" class="hidden absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center">
+                <svg class="animate-spin h-8 w-8 text-secondary mb-2" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="text-xs font-semibold text-slate-700">Updating Tabulation Register...</span>
+            </div>
+
+            <!-- Header Info Bar -->
+            <div class="bg-slate-900 text-white p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div>
+                    <h3 class="font-heading font-bold text-sm" id="tr-header-title">{{ tr_data.metadata.report_title }} - SEMESTER {{ tr_data.metadata.semester }}</h3>
+                    <p class="text-slate-400 text-[11px]" id="tr-header-sub">Dept: {{ tr_data.metadata.department }} | Branch: {{ tr_data.metadata.branch }} | Batch: {{ tr_data.metadata.batch }} | Academic Year: {{ tr_data.metadata.academic_year }}</p>
+                </div>
+                <div class="text-right text-[11px] text-slate-400">
+                    <div>Generated: <span id="tr-generated-date">{{ tr_data.metadata.generated_date }}</span></div>
+                    <div>Subjects Included: <span id="tr-total-subjects">{{ tr_data.metadata.total_subjects }}</span></div>
+                </div>
+            </div>
+
+            <!-- Table Container -->
+            <div class="overflow-x-auto max-h-[650px] overflow-y-auto">
+                <table id="tr-table" class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <!-- Row 1: Subject Groups Header -->
+                        <tr class="bg-slate-800 text-white font-heading text-[11px]">
+                            <th class="p-2.5 border-b border-r border-slate-700 sticky left-0 z-10 bg-slate-800 w-12 text-center">S.No</th>
+                            <th class="p-2.5 border-b border-r border-slate-700 sticky left-12 z-10 bg-slate-800 min-w-[130px]">Hall Ticket</th>
+                            <th class="p-2.5 border-b border-r border-slate-700 sticky left-[178px] z-10 bg-slate-800 min-w-[180px]">Student Name</th>
+
+                            {% for sub in tr_data.subjects %}
+                            <th colspan="4" class="p-2 border-b border-r border-slate-700 text-center bg-blue-950/80 min-w-[220px]">
+                                <div class="font-bold text-blue-200">{{ sub.code }}</div>
+                                <div class="text-[10px] font-normal text-slate-300 truncate max-w-[200px] mx-auto">{{ sub.name }}</div>
+                                <div class="text-[9px] text-blue-400 font-mono">({{ sub.credits }} Credits)</div>
+                            </th>
+                            {% endfor %}
+
+                            <th colspan="6" class="p-2 border-b border-slate-700 text-center bg-slate-900 min-w-[320px] text-amber-300">
+                                SEMESTER AGGREGATES
+                            </th>
+                        </tr>
+
+                        <!-- Row 2: Sub-headers -->
+                        <tr class="bg-slate-700 text-white text-[10px] font-semibold uppercase tracking-wider">
+                            <th class="p-2 border-b border-r border-slate-600 sticky left-0 z-10 bg-slate-700 text-center"></th>
+                            <th class="p-2 border-b border-r border-slate-600 sticky left-12 z-10 bg-slate-700"></th>
+                            <th class="p-2 border-b border-r border-slate-600 sticky left-[178px] z-10 bg-slate-700"></th>
+
+                            {% for sub in tr_data.subjects %}
+                            <th class="p-1.5 border-b border-r border-slate-600 text-right w-12 bg-blue-900/40">Int</th>
+                            <th class="p-1.5 border-b border-r border-slate-600 text-right w-12 bg-blue-900/40">Ext</th>
+                            <th class="p-1.5 border-b border-r border-slate-600 text-right w-12 bg-blue-900/60 font-bold">Tot</th>
+                            <th class="p-1.5 border-b border-r border-slate-600 text-center w-10 bg-blue-900/80 font-bold">Grd</th>
+                            {% endfor %}
+
+                            <th class="p-1.5 border-b border-r border-slate-600 text-center w-16">Reg Cr</th>
+                            <th class="p-1.5 border-b border-r border-slate-600 text-center w-16">Earn Cr</th>
+                            <th class="p-1.5 border-b border-r border-slate-600 text-right w-16 font-bold">SGPA</th>
+                            <th class="p-1.5 border-b border-r border-slate-600 text-right w-16 font-bold">CGPA</th>
+                            <th class="p-1.5 border-b border-r border-slate-600 text-right w-16 font-bold">%</th>
+                            <th class="p-1.5 border-b border-slate-600 text-center w-20 font-bold">Result</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tr-tbody" class="divide-y divide-slate-200">
+                        {% if not tr_data.students %}
+                        <tr>
+                            <td colspan="{{ 3 + (4 * tr_data.subjects|length) + 6 }}" class="p-8 text-center text-slate-500">
+                                <div class="flex flex-col items-center justify-center">
+                                    <svg class="w-12 h-12 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    <p class="font-semibold text-slate-700">No released Tabulation Register records found.</p>
+                                    <p class="text-xs text-slate-400 mt-1">Make sure examination results for the selected semester/filters have been officially released by the Admin.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        {% for st in tr_data.students %}
+                        <tr class="hover:bg-slate-50 transition-colors {% if loop.index % 2 == 0 %}bg-slate-50/50{% endif %}">
+                            <td class="p-2 border-r border-slate-200 text-center sticky left-0 z-10 bg-white font-medium text-slate-500">{{ loop.index }}</td>
+                            <td class="p-2 border-r border-slate-200 font-mono font-semibold text-slate-800 sticky left-12 z-10 bg-white">{{ st.roll_no }}</td>
+                            <td class="p-2 border-r border-slate-200 font-medium text-slate-900 sticky left-[178px] z-10 bg-white truncate max-w-[180px]" title="{{ st.name }}">{{ st.name }}</td>
+
+                            {% for sub_entry in st.subjects %}
+                            <td class="p-2 border-r border-slate-200 text-right text-slate-600 font-mono">{{ sub_entry.internal }}</td>
+                            <td class="p-2 border-r border-slate-200 text-right text-slate-600 font-mono">{{ sub_entry.external }}</td>
+                            <td class="p-2 border-r border-slate-200 text-right font-bold text-slate-900 font-mono">{{ sub_entry.total }}</td>
+                            <td class="p-2 border-r border-slate-200 text-center font-bold font-mono {% if sub_entry.grade == 'F' %}text-red-600 bg-red-50{% elif sub_entry.grade == 'A+' %}text-emerald-700 bg-emerald-50{% else %}text-slate-700{% endif %}">{{ sub_entry.grade }}</td>
+                            {% endfor %}
+
+                            <td class="p-2 border-r border-slate-200 text-center text-slate-600 font-mono">{{ st.total_credits }}</td>
+                            <td class="p-2 border-r border-slate-200 text-center text-slate-700 font-bold font-mono">{{ st.credits_earned }}</td>
+                            <td class="p-2 border-r border-slate-200 text-right font-bold text-secondary font-mono">{{ "%.2f"|format(st.sgpa) }}</td>
+                            <td class="p-2 border-r border-slate-200 text-right font-medium text-slate-700 font-mono">{{ "%.2f"|format(st.cgpa) }}</td>
+                            <td class="p-2 border-r border-slate-200 text-right font-bold text-slate-800 font-mono">{{ st.percentage }}%</td>
+                            <td class="p-2 text-center">
+                                {% if st.overall_result == 'PASS' %}
+                                <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold text-[10px] rounded-full border border-emerald-300 shadow-xs">PASS</span>
+                                {% else %}
+                                <span class="px-2 py-0.5 bg-red-100 text-red-800 font-bold text-[10px] rounded-full border border-red-300 shadow-xs">FAIL</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let debounceTimer;
+
+    function debounceFetch() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(fetchTRData, 300);
+    }
+
+    function getFilterParams() {
+        return {
+            semester: document.getElementById('filter-semester').value,
+            academic_year: document.getElementById('filter-academic-year').value,
+            department: document.getElementById('filter-department').value,
+            branch: document.getElementById('filter-branch').value,
+            batch: document.getElementById('filter-batch').value,
+            section: document.getElementById('filter-section').value,
+            exam_type: document.getElementById('filter-exam-type').value,
+            search: document.getElementById('search-input').value,
+            pass_fail: document.getElementById('filter-pass-fail').value,
+            grade_filter: document.getElementById('filter-grade').value,
+            min_sgpa: document.getElementById('min-sgpa').value,
+            max_sgpa: document.getElementById('max-sgpa').value,
+            min_pct: document.getElementById('min-pct').value,
+            max_pct: document.getElementById('max-pct').value,
+            sort_by: document.getElementById('sort-by').value,
+            sort_dir: document.getElementById('sort-dir').value
+        };
+    }
+
+    function fetchTRData() {
+        const overlay = document.getElementById('loading-overlay');
+        overlay.classList.remove('hidden');
+
+        const params = getFilterParams();
+        const queryString = new URLSearchParams(params).toString();
+
+        fetch(`/admin/tabulation_register/data?${queryString}`)
+            .then(res => {
+                if (!res.ok) throw new Error("Failed to load Tabulation Register data.");
+                return res.json();
+            })
+            .then(res => {
+                overlay.classList.add('hidden');
+                if (res.success && res.data) {
+                    renderTRTable(res.data);
+                } else {
+                    window.showToast(res.message || "Error fetching TR data", "error");
+                }
+            })
+            .catch(err => {
+                overlay.classList.add('hidden');
+                console.error(err);
+                window.showToast("Network/Server error fetching Tabulation Register", "error");
+            });
+    }
+
+    function renderTRTable(data) {
+        const meta = data.metadata;
+        const subjects = data.subjects;
+        const students = data.students;
+        const summary = data.summary;
+
+        document.getElementById('tr-header-title').innerText = `${meta.report_title} - SEMESTER ${meta.semester}`;
+        document.getElementById('tr-header-sub').innerText = `Dept: ${meta.department} | Branch: ${meta.branch} | Batch: ${meta.batch} | Academic Year: ${meta.academic_year}`;
+        document.getElementById('tr-generated-date').innerText = meta.generated_date;
+        document.getElementById('tr-total-subjects').innerText = meta.total_subjects;
+
+        document.getElementById('stat-total').innerText = summary.total_students;
+        document.getElementById('stat-appeared').innerText = `Appeared: ${summary.appeared}`;
+        document.getElementById('stat-passed').innerText = summary.passed;
+        document.getElementById('stat-pass-pct').innerText = `Pass Rate: ${summary.pass_percentage}%`;
+        document.getElementById('stat-failed').innerText = summary.failed;
+        document.getElementById('stat-pass-rate').innerText = `${summary.pass_percentage}%`;
+        document.getElementById('stat-pass-bar').style.width = `${summary.pass_percentage}%`;
+        document.getElementById('stat-sgpa-range').innerText = `${summary.highest_sgpa} / ${summary.average_sgpa} / ${summary.lowest_sgpa}`;
+        document.getElementById('stat-pct-range').innerText = `${summary.highest_percentage}% - ${summary.lowest_percentage}%`;
+
+        const table = document.getElementById('tr-table');
+        const thead = table.querySelector('thead');
+        
+        let headerRow1Html = `
+            <tr class="bg-slate-800 text-white font-heading text-[11px]">
+                <th class="p-2.5 border-b border-r border-slate-700 sticky left-0 z-10 bg-slate-800 w-12 text-center">S.No</th>
+                <th class="p-2.5 border-b border-r border-slate-700 sticky left-12 z-10 bg-slate-800 min-w-[130px]">Hall Ticket</th>
+                <th class="p-2.5 border-b border-r border-slate-700 sticky left-[178px] z-10 bg-slate-800 min-w-[180px]">Student Name</th>
+        `;
+
+        let headerRow2Html = `
+            <tr class="bg-slate-700 text-white text-[10px] font-semibold uppercase tracking-wider">
+                <th class="p-2 border-b border-r border-slate-600 sticky left-0 z-10 bg-slate-700 text-center"></th>
+                <th class="p-2 border-b border-r border-slate-600 sticky left-12 z-10 bg-slate-700"></th>
+                <th class="p-2 border-b border-r border-slate-600 sticky left-[178px] z-10 bg-slate-700"></th>
+        `;
+
+        subjects.forEach(sub => {
+            headerRow1Html += `
+                <th colspan="4" class="p-2 border-b border-r border-slate-700 text-center bg-blue-950/80 min-w-[220px]">
+                    <div class="font-bold text-blue-200">${sub.code}</div>
+                    <div class="text-[10px] font-normal text-slate-300 truncate max-w-[200px] mx-auto">${sub.name}</div>
+                    <div class="text-[9px] text-blue-400 font-mono">(${sub.credits} Credits)</div>
+                </th>
+            `;
+
+            headerRow2Html += `
+                <th class="p-1.5 border-b border-r border-slate-600 text-right w-12 bg-blue-900/40">Int</th>
+                <th class="p-1.5 border-b border-r border-slate-600 text-right w-12 bg-blue-900/40">Ext</th>
+                <th class="p-1.5 border-b border-r border-slate-600 text-right w-12 bg-blue-900/60 font-bold">Tot</th>
+                <th class="p-1.5 border-b border-r border-slate-600 text-center w-10 bg-blue-900/80 font-bold">Grd</th>
+            `;
+        });
+
+        headerRow1Html += `
+            <th colspan="6" class="p-2 border-b border-slate-700 text-center bg-slate-900 min-w-[320px] text-amber-300">
+                SEMESTER AGGREGATES
+            </th>
+        </tr>`;
+
+        headerRow2Html += `
+            <th class="p-1.5 border-b border-r border-slate-600 text-center w-16">Reg Cr</th>
+            <th class="p-1.5 border-b border-r border-slate-600 text-center w-16">Earn Cr</th>
+            <th class="p-1.5 border-b border-r border-slate-600 text-right w-16 font-bold">SGPA</th>
+            <th class="p-1.5 border-b border-r border-slate-600 text-right w-16 font-bold">CGPA</th>
+            <th class="p-1.5 border-b border-r border-slate-600 text-right w-16 font-bold">%</th>
+            <th class="p-1.5 border-b border-slate-600 text-center w-20 font-bold">Result</th>
+        </tr>`;
+
+        thead.innerHTML = headerRow1Html + headerRow2Html;
+
+        const tbody = document.getElementById('tr-tbody');
+        if (!students || students.length === 0) {
+            const colSpan = 3 + (4 * subjects.length) + 6;
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="${colSpan}" class="p-8 text-center text-slate-500">
+                        <div class="flex flex-col items-center justify-center">
+                            <svg class="w-12 h-12 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            <p class="font-semibold text-slate-700">No matching Tabulation Register records found.</p>
+                            <p class="text-xs text-slate-400 mt-1">Try resetting search parameters or selecting another cohort.</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        let bodyHtml = '';
+        students.forEach((st, idx) => {
+            const bgClass = (idx % 2 === 1) ? 'bg-slate-50/50' : 'bg-white';
+            bodyHtml += `
+                <tr class="hover:bg-slate-50 transition-colors ${bgClass}">
+                    <td class="p-2 border-r border-slate-200 text-center sticky left-0 z-10 bg-white font-medium text-slate-500">${idx + 1}</td>
+                    <td class="p-2 border-r border-slate-200 font-mono font-semibold text-slate-800 sticky left-12 z-10 bg-white">${st.roll_no}</td>
+                    <td class="p-2 border-r border-slate-200 font-medium text-slate-900 sticky left-[178px] z-10 bg-white truncate max-w-[180px]" title="${st.name}">${st.name}</td>
+            `;
+
+            st.subjects.forEach(sub => {
+                let gradeClass = 'text-slate-700';
+                if (sub.grade === 'F') gradeClass = 'text-red-600 bg-red-50';
+                else if (sub.grade === 'A+') gradeClass = 'text-emerald-700 bg-emerald-50';
+
+                bodyHtml += `
+                    <td class="p-2 border-r border-slate-200 text-right text-slate-600 font-mono">${sub.internal}</td>
+                    <td class="p-2 border-r border-slate-200 text-right text-slate-600 font-mono">${sub.external}</td>
+                    <td class="p-2 border-r border-slate-200 text-right font-bold text-slate-900 font-mono">${sub.total}</td>
+                    <td class="p-2 border-r border-slate-200 text-center font-bold font-mono ${gradeClass}">${sub.grade}</td>
+                `;
+            });
+
+            const resultBadge = (st.overall_result === 'PASS') 
+                ? `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold text-[10px] rounded-full border border-emerald-300 shadow-xs">PASS</span>`
+                : `<span class="px-2 py-0.5 bg-red-100 text-red-800 font-bold text-[10px] rounded-full border border-red-300 shadow-xs">FAIL</span>`;
+
+            bodyHtml += `
+                    <td class="p-2 border-r border-slate-200 text-center text-slate-600 font-mono">${st.total_credits}</td>
+                    <td class="p-2 border-r border-slate-200 text-center text-slate-700 font-bold font-mono">${st.credits_earned}</td>
+                    <td class="p-2 border-r border-slate-200 text-right font-bold text-secondary font-mono">${st.sgpa.toFixed(2)}</td>
+                    <td class="p-2 border-r border-slate-200 text-right font-medium text-slate-700 font-mono">${st.cgpa.toFixed(2)}</td>
+                    <td class="p-2 border-r border-slate-200 text-right font-bold text-slate-800 font-mono">${st.percentage}%</td>
+                    <td class="p-2 text-center">${resultBadge}</td>
+                </tr>
+            `;
+        });
+
+        tbody.innerHTML = bodyHtml;
+    }
+
+    function exportExcel() {
+        const params = getFilterParams();
+        const queryString = new URLSearchParams(params).toString();
+        window.location.href = `/admin/tabulation_register/export?${queryString}`;
+    }
+
+    function printTR() {
+        const params = getFilterParams();
+        const queryString = new URLSearchParams(params).toString();
+        window.open(`/admin/tabulation_register/print?${queryString}`, '_blank');
+    }
+
+    function resetFilters() {
+        document.getElementById('filter-semester').value = '1';
+        document.getElementById('filter-academic-year').value = 'ALL';
+        document.getElementById('filter-department').value = 'ALL';
+        document.getElementById('filter-branch').value = 'ALL';
+        document.getElementById('filter-batch').value = 'ALL';
+        document.getElementById('filter-section').value = 'ALL';
+        document.getElementById('filter-exam-type').value = 'ALL';
+        document.getElementById('search-input').value = '';
+        document.getElementById('filter-pass-fail').value = 'ALL';
+        document.getElementById('filter-grade').value = 'ALL';
+        document.getElementById('min-sgpa').value = '';
+        document.getElementById('max-sgpa').value = '';
+        document.getElementById('min-pct').value = '';
+        document.getElementById('max-pct').value = '';
+        document.getElementById('sort-by').value = 'roll_no';
+        document.getElementById('sort-dir').value = 'asc';
+        fetchTRData();
+    }
+</script>
+{% endblock %}
