@@ -168,6 +168,10 @@ def validate_excel_file(file_path, upload_type):
                     duplicate_rolls.add(r_str)
                 seen_rolls.add(r_str)
 
+        # Load existing roll numbers from database
+        from models import Student
+        existing_rolls = {s.roll_no for s in Student.query.all()}
+
         for idx, row in df_clean.iterrows():
             row_errors = []
             row_num = idx + 2  # 1-based index (header is row 1)
@@ -192,6 +196,14 @@ def validate_excel_file(file_path, upload_type):
                         "column": "Roll_Number",
                         "value": r_str,
                         "reason": "Duplicate Roll Numbers are not allowed."
+                    })
+                elif r_str not in existing_rolls:
+                    row_errors.append({
+                        "row_num": row_num,
+                        "problem": "Missing Student",
+                        "column": "Roll_Number",
+                        "value": r_str,
+                        "reason": f"Student with Roll Number '{r_str}' does not exist in the Student database."
                     })
 
             # Check Internal Marks
@@ -404,6 +416,10 @@ def validate_excel_file(file_path, upload_type):
                     duplicate_rolls.add(r_str)
                 seen_rolls.add(r_str)
 
+        # Load existing roll numbers from database
+        from models import Student
+        existing_rolls = {s.roll_no for s in Student.query.all()}
+
         for idx, row in df_clean.iterrows():
             row_errors = []
             row_num = idx + 2
@@ -448,6 +464,14 @@ def validate_excel_file(file_path, upload_type):
                         "column": "Roll_Number",
                         "value": r_str,
                         "reason": "Duplicate Roll Numbers are not allowed."
+                    })
+                elif r_str not in existing_rolls:
+                    row_errors.append({
+                        "row_num": row_num,
+                        "problem": "Missing Student",
+                        "column": "Roll_Number",
+                        "value": r_str,
+                        "reason": f"Student with Roll Number '{r_str}' does not exist in the Student database."
                     })
 
             if row_errors:

@@ -1,12 +1,25 @@
 from app import app, db
-from models import Admin, Teacher, Student, Subject
+from models import (
+    Admin, Teacher, Student, Subject, Mark, Result,
+    AnonymousMarkData, StudentMapping, Submission, AuditLog,
+    ProcessingLog, ResultRelease, NotificationLog, SystemSetting, SystemActivityLog
+)
 from werkzeug.security import generate_password_hash
 
 def seed_database():
     with app.app_context():
-        # Clear existing non-admin data if testing
-        db.session.query(Student).delete()
+        # Clear existing data in correct dependency order
+        db.session.query(ResultRelease).delete()
+        db.session.query(NotificationLog).delete()
+        db.session.query(ProcessingLog).delete()
+        db.session.query(AuditLog).delete()
+        db.session.query(Submission).delete()
+        db.session.query(StudentMapping).delete()
+        db.session.query(AnonymousMarkData).delete()
+        db.session.query(Mark).delete()
+        db.session.query(Result).delete()
         db.session.query(Subject).delete()
+        db.session.query(Student).delete()
         db.session.query(Teacher).delete()
         db.session.commit()
 
